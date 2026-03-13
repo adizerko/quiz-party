@@ -9,7 +9,6 @@ import os
 
 app = FastAPI()
 
-# 1. Настройка CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -17,14 +16,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 2. Инициализация Socket.IO
-# Мы будем использовать сам sio_manager для работы с событиями
 sio_manager = socketio.SocketManager(app=app, mount_location='/socket.io', cors_allowed_origins='*')
 
 database.init_db()
 
-# --- API Эндпоинты ---
-# (Оставь свои @app.post и @app.get для квизов здесь без изменений)
+def get_players_in_quiz(db: Session, quiz_id: int):
+    players = db.query(models.Player).filter(models.Player.quiz_id == quiz_id).all()
+    return [{"name": p.name, "answer": p.last_answer, "is_host": p.is_host} for p in players]
 
 @app.post("/api/quizzes", response_model=schemas.QuizResponse)
 def create_quiz(quiz_data: schemas.QuizCreate, db: Session = Depends(database.get_db)):
@@ -45,30 +43,58 @@ def get_quiz(code: str, db: Session = Depends(database.get_db)):
         raise HTTPException(status_code=404, detail="Квиз не найден")
     return quiz
 
-# --- СОБЫТИЯ SOCKET.IO ---
-# В fastapi-socketio декоратор вешается на сам менеджер
+# --- SOCKET.IO EVENTS ---
 
 @sio_manager.on('join_room')
 async def handle_join(sid, data):
     room = data.get('room')
-    # ДОБАВЬ await ТУТ:
-    await sio_manager.enter_room(sid, room)
-    print(f"✅ Игрок {sid} подключился к комнате: {room}")
+    name = data.get('name')
+    role = data.get('role')
+    is_host = (role == 'host')
+    
+    db = next(database.get_db())
+    quiz = db.query(models.Quiz).filter(models.Quiz.code == room).first()
+    
+    if quiz:
+        await sio_manager.enter_room(sid, room)
+        player = db.query(models.Player).filter(models.Player.quiz_id == quiz.id, models.Player.name == name).first()
+        if not player:
+            player = models.Player(name=name, sid=sid, quiz_id=quiz.id, is_host=is_host)
+            db.add(player)
+        else:
+            player.sid = sid
+        db.commit()
+        await sio_manager.emit('update_players', get_players_in_quiz(db, quiz.id), room=room)
 
-@sio_manager.on('next_question_signal')
-async def handle_next_question(sid, data):
-    room = data.get('room')
-    print(f"📢 Сигнал смены вопроса в комнате: {room}")
-    # И ТУТ (уже должен быть, но проверь):
-    await sio_manager.emit('move_to_next', {}, room=room)
+@sio_manager.on('start_game_signal')
+async def handle_start(sid, data):
+    await sio_manager.emit('game_started', {}, room=data.get('room'))
 
 @sio_manager.on('send_answer')
 async def handle_answer(sid, data):
     room = data.get('room')
-    # И ТУТ:
-    await sio_manager.emit('new_answer', data, room=room)
+    name = data.get('name')
+    answer = data.get('answer')
+    
+    db = next(database.get_db())
+    quiz = db.query(models.Quiz).filter(models.Quiz.code == room).first()
+    player = db.query(models.Player).filter(models.Player.quiz_id == quiz.id, models.Player.name == name).first()
+    
+    if player:
+        player.last_answer = answer
+        db.commit()
+        await sio_manager.emit('update_answers', get_players_in_quiz(db, quiz.id), room=room)
 
-# --- РАЗДАЧА ФРОНТЕНДА ---
+@sio_manager.on('next_question_signal')
+async def handle_next_question(sid, data):
+    room = data.get('room')
+    db = next(database.get_db())
+    quiz = db.query(models.Quiz).filter(models.Quiz.code == room).first()
+    db.query(models.Player).filter(models.Player.quiz_id == quiz.id).update({"last_answer": None})
+    db.commit()
+    await sio_manager.emit('move_to_next', {}, room=room)
+    await sio_manager.emit('update_answers', get_players_in_quiz(db, quiz.id), room=room)
+
 frontend_path = os.path.join(os.getcwd(), "frontend")
 
 @app.get("/")

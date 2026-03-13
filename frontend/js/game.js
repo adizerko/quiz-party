@@ -1,130 +1,118 @@
-const socket = io(); // Автоматически подключается к текущему хосту
-
+const socket = io();
 let currentQuestions = [];
 let currentStep = 0;
 
 const urlParams = new URLSearchParams(window.location.search);
 const roomCode = urlParams.get('room');
 const role = urlParams.get('role');
+const playerName = role === 'host' ? 'Организатор' : (sessionStorage.getItem('quiz_player_name') || "Гость " + Math.floor(Math.random()*1000));
 
-async function loadQuizData() {
-    if (!roomCode) {
-        alert("Код комнаты не найден!");
-        window.location.href = 'index.html';
-        return;
-    }
+if (document.getElementById('display-room-code')) {
+    document.getElementById('display-room-code').innerText = roomCode;
+}
 
+async function init() {
     try {
-        const response = await fetch(`http://127.0.0.1:8000/api/quizzes/${roomCode}`);
+        const response = await fetch(`/api/quizzes/${roomCode}`);
         if (response.ok) {
             const data = await response.json();
             currentQuestions = data.questions_data;
             
-            // Входим в комнату в Socket.IO
-            socket.emit('join_room', { room: roomCode });
+            socket.emit('join_room', { room: roomCode, name: playerName, role: role });
 
             if (role === 'host') {
-                initHost();
+                document.getElementById('host-screen').style.display = 'flex';
             } else {
-                initPlayer();
+                document.getElementById('player-screen').style.display = 'flex';
             }
-        } else {
-            alert("Комната не существует.");
-            window.location.href = 'index.html';
         }
-    } catch (e) {
-        console.error("Ошибка загрузки:", e);
-    }
+    } catch (e) { console.error(e); }
 }
 
-function initHost() {
-    document.getElementById('host-screen').style.display = 'flex';
-    updateHostUI();
-}
-
-function initPlayer() {
-    document.getElementById('player-screen').style.display = 'flex';
-    renderPlayerQuestion();
-}
-
-function updateHostUI() {
-    const q = currentQuestions[currentStep];
-    const textEl = document.getElementById('host-question-text');
-    if (q) {
-        textEl.innerText = q.text;
-        document.getElementById('answers-count').innerText = "0"; // Сброс счетчика при новом вопросе
-    } else {
-        textEl.innerText = "Квиз завершен! 🎉";
-        document.getElementById('host-controls').style.display = 'none';
-    }
+function startGame() {
+    socket.emit('start_game_signal', { room: roomCode });
 }
 
 function nextQuestion() {
-    if (currentStep < currentQuestions.length - 1) {
-        socket.emit('next_question_signal', { room: roomCode });
-    } else {
-        // Сигнал конца игры
-        socket.emit('next_question_signal', { room: roomCode });
+    socket.emit('next_question_signal', { room: roomCode });
+}
+
+function sendAnswer(val) {
+    socket.emit('send_answer', { room: roomCode, name: playerName, answer: val });
+    document.getElementById('player-answer-area').innerHTML = "<h3>Ответ принят! ✅</h3>";
+}
+
+// --- SOCKET LISTENERS ---
+
+socket.on('update_players', (players) => {
+    const list = document.getElementById('lobby-players-list');
+    if (list && role === 'host') {
+        const onlyPlayers = players.filter(p => !p.is_host);
+        list.innerHTML = onlyPlayers.map(p => `
+            <div class="player-row">
+                <div class="player-icon">${p.name[0].toUpperCase()}</div>
+                <div class="player-info">
+                    <span class="player-name">${p.name}</span>
+                    <span class="player-status-text">В лобби</span>
+                </div>
+            </div>
+        `).join('');
     }
+});
+
+socket.on('game_started', () => {
+    if (role === 'host') {
+        document.getElementById('host-lobby').style.display = 'none';
+        document.getElementById('host-game-area').style.display = 'block';
+        updateHostUI();
+    } else {
+        document.getElementById('player-wait').style.display = 'none';
+        document.getElementById('player-game-area').style.display = 'block';
+        renderPlayerQuestion();
+    }
+});
+
+socket.on('update_answers', (players) => {
+    const grid = document.getElementById('players-answers-grid');
+    if (grid && role === 'host') {
+        const onlyPlayers = players.filter(p => !p.is_host);
+        grid.innerHTML = onlyPlayers.map(p => `
+            <div class="player-row ${p.answer ? 'has-answered' : ''}">
+                <div class="player-icon" style="background: ${p.answer ? '#ff85a1' : '#6c5ce7'}">
+                    ${p.answer ? '✅' : '?'}
+                </div>
+                <div class="player-info">
+                    <span class="player-name">${p.name}</span>
+                    <span class="player-status-text">${p.answer ? p.answer : 'Думает...'}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+});
+
+socket.on('move_to_next', () => {
+    currentStep++;
+    role === 'host' ? updateHostUI() : renderPlayerQuestion();
+});
+
+// Функции отрисовки (updateHostUI, renderPlayerQuestion) остаются как в прошлых примерах
+function updateHostUI() {
+    const q = currentQuestions[currentStep];
+    const textEl = document.getElementById('host-question-text');
+    if (q) textEl.innerText = q.text;
+    else textEl.innerText = "Финиш! 🎉";
 }
 
 function renderPlayerQuestion() {
     const q = currentQuestions[currentStep];
     const area = document.getElementById('player-answer-area');
     const title = document.getElementById('player-question-text');
-
-    if (!q) {
-        title.innerText = "Игра окончена! 🎉";
-        area.innerHTML = "<p>Спасибо за участие!</p>";
-        return;
-    }
-
-    title.innerText = q.text;
-    area.innerHTML = "";
-
-    if (q.type === 'options') {
-        const grid = document.createElement('div');
-        grid.className = "answer-grid";
-        q.options.forEach(opt => {
-            const btn = document.createElement('button');
-            btn.className = "btn-answer";
-            btn.innerText = opt;
-            btn.onclick = () => sendAnswer(opt);
-            grid.appendChild(btn);
-        });
-        area.appendChild(grid);
-    } else {
-        area.innerHTML = `
-            <input type="text" id="ans-input" class="answer-input" placeholder="Твой ответ...">
-            <button onclick="sendAnswer(document.getElementById('ans-input').value)" class="btn-party-add">Отправить ✨</button>
-        `;
-    }
-}
-
-function sendAnswer(val) {
-    if (!val) return;
-    const name = sessionStorage.getItem('quiz_player_name') || "Аноним";
-    socket.emit('send_answer', { room: roomCode, name: name, answer: val });
+    if (!q) { title.innerText = "Конец игры!"; area.innerHTML = ""; return; }
     
-    document.getElementById('player-answer-area').innerHTML = "<h3>Ответ отправлен! 🎯</h3>";
+    title.innerText = q.text;
+    area.innerHTML = q.type === 'options' 
+        ? q.options.map(o => `<button class="btn-answer" onclick="sendAnswer('${o}')">${o}</button>`).join('')
+        : `<input type="text" id="ans" class="answer-input"><button onclick="sendAnswer(document.getElementById('ans').value)">Отправить</button>`;
 }
 
-// --- СЛУШАТЕЛИ СОБЫТИЙ ---
-
-socket.on('move_to_next', () => {
-    currentStep++;
-    if (role === 'host') {
-        updateHostUI();
-    } else {
-        renderPlayerQuestion();
-    }
-});
-
-socket.on('new_answer', () => {
-    if (role === 'host') {
-        const countEl = document.getElementById('answers-count');
-        countEl.innerText = parseInt(countEl.innerText) + 1;
-    }
-});
-
-window.onload = loadQuizData;
+window.onload = init;

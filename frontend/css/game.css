@@ -1,72 +1,141 @@
-.game-card {
-    min-height: 400px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap');
+
+:root {
+    --party-purple: #6c5ce7;
+    --party-pink: #ff85a1;
+    --party-bg: #f0f2f5;
+    --party-text: #2d3436;
 }
 
+body {
+    background-color: var(--party-bg);
+    font-family: 'Montserrat', sans-serif;
+    color: var(--party-text);
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+}
+
+.main-container {
+    width: 100%;
+    max-width: 500px;
+}
+
+/* Основная карточка в твоем стиле */
+.game-card {
+    background: white;
+    border-radius: 30px;
+    padding: 40px 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Статус игрока/хоста */
 .status-badge {
     display: inline-block;
-    padding: 5px 15px;
+    padding: 6px 15px;
     background: rgba(108, 92, 231, 0.1);
-    color: #6c5ce7;
-    border-radius: 20px;
+    color: var(--party-purple);
+    border-radius: 50px;
     font-size: 0.8rem;
-    font-weight: 600;
+    font-weight: 800;
     margin-bottom: 20px;
+    text-transform: uppercase;
 }
 
 .game-question {
-    font-size: 1.5rem;
     font-weight: 800;
-    color: #2d3436;
-    margin-bottom: 30px;
+    font-size: 1.5rem;
+    margin-bottom: 25px;
+    color: var(--party-text);
 }
 
-.stats-grid {
+/* Лобби и мониторинг ответов в стиле твоих "menu-item" */
+.player-row {
     display: flex;
-    justify-content: center;
-    gap: 30px;
-    margin-bottom: 30px;
+    align-items: center;
+    padding: 15px 20px;
+    background: white;
+    border-radius: 20px;
+    margin-bottom: 12px;
+    border: 2px solid #f8f9fa;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    text-align: left;
+    transition: all 0.3s ease;
 }
 
-.stat-item {
+.player-row.has-answered {
+    border-color: var(--party-pink);
+    background: #fff9fa;
+    transform: scale(1.02);
+}
+
+.player-icon {
+    width: 45px;
+    height: 45px;
+    background: var(--party-purple);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    margin-right: 15px;
+}
+
+.player-info {
     display: flex;
     flex-direction: column;
 }
 
-.stat-val {
-    font-size: 2rem;
-    font-weight: 800;
-    color: #ff85a1;
+.player-name {
+    font-weight: 700;
+    font-size: 1.1rem;
 }
 
-.stat-label {
+.player-status-text {
     font-size: 0.8rem;
     opacity: 0.6;
 }
 
-/* Стили для кнопок ответов (у игрока) */
-.answer-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
+/* Кнопки и инпуты из твоего дизайна */
+.btn-party-main {
+    width: 100%;
+    padding: 18px;
+    background: var(--party-pink);
+    color: white;
+    border: none;
+    border-radius: 15px;
+    font-weight: 800;
+    font-size: 1.1rem;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(255, 133, 161, 0.3);
+    transition: transform 0.2s;
+}
+
+.btn-party-main:hover {
+    transform: translateY(-2px);
 }
 
 .btn-answer {
-    padding: 20px;
-    border: 3px solid #eee;
-    border-radius: 15px;
+    width: 100%;
+    padding: 15px;
     background: white;
+    border: 2px solid #eee;
+    border-radius: 12px;
+    margin-bottom: 10px;
     font-family: 'Montserrat', sans-serif;
     font-weight: 600;
     cursor: pointer;
-    transition: 0.2s;
+    transition: all 0.2s;
 }
 
 .btn-answer:hover {
-    border-color: #ff85a1;
-    background: #fff9fa;
+    border-color: var(--party-purple);
+    background: rgba(108, 92, 231, 0.05);
 }
 
 .answer-input {
@@ -74,17 +143,20 @@
     padding: 15px;
     border: 2px solid #eee;
     border-radius: 12px;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 1rem;
     margin-bottom: 15px;
+    box-sizing: border-box;
+    font-family: 'Montserrat', sans-serif;
 }
 
-.waiting-spinner {
-    font-size: 3rem;
-    animation: rotate 2s linear infinite;
+.emoji-logo {
+    font-size: 3.5rem;
+    display: block;
+    margin-bottom: 10px;
+    animation: pulse 2s infinite;
 }
 
-@keyframes rotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
 }

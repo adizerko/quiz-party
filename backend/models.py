@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, JSON
+from sqlalchemy import Column, Integer, String, ForeignKey, JSON, Boolean
 from sqlalchemy.orm import relationship, declarative_base
 
 Base = declarative_base()
@@ -6,14 +6,17 @@ Base = declarative_base()
 class Quiz(Base):
     __tablename__ = "quizzes"
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String)  # Название квиза (например, "ДР Макса")
-    code = Column(String, unique=True, index=True) # Код комнаты для входа
-    # Храним вопросы в формате JSON для простоты (или можно вынести в отдельную таблицу)
-    questions_data = Column(JSON) 
+    title = Column(String)
+    code = Column(String, unique=True, index=True)
+    questions_data = Column(JSON)
+    players = relationship("Player", back_populates="quiz", cascade="all, delete-orphan")
 
 class Player(Base):
     __tablename__ = "players"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
-    score = Column(Integer, default=0)
+    sid = Column(String) 
+    last_answer = Column(String, nullable=True)
+    is_host = Column(Boolean, default=False)
     quiz_id = Column(Integer, ForeignKey("quizzes.id"))
+    quiz = relationship("Quiz", back_populates="players")

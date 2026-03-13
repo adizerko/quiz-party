@@ -3,35 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quiz Party - Игра</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <title>Party Quiz</title>
     <link rel="stylesheet" href="css/game.css">
 </head>
-<body class="party-bg">
+<body>
     <div class="main-container">
-        <div id="host-screen" class="party-card game-card" style="display: none;">
-            <div class="status-badge">РЕЖИМ ВЕДУЩЕГО</div>
-            <h2 id="host-question-text" class="game-question">Загрузка вопроса...</h2>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <span class="stat-val" id="answers-count">0</span>
-                    <span class="stat-label">ответов</span>
-                </div>
+        
+        <div id="host-screen" class="game-card" style="display: none;">
+            <span class="status-badge">Host Panel</span>
+            
+            <div id="host-lobby">
+                <span class="emoji-logo">🎉</span>
+                <h2 class="game-question">Ждем гостей</h2>
+                <p style="font-weight: 600; color: var(--party-purple);">Код: <span id="display-room-code"></span></p>
+                <div id="lobby-players-list" style="margin: 20px 0;"></div>
+                <button onclick="startGame()" class="btn-party-main">Начать игру</button>
             </div>
-            <div id="host-controls">
-                <button onclick="nextQuestion()" class="btn-party-direct">Следующий вопрос 🚀</button>
+
+            <div id="host-game-area" style="display: none;">
+                <h2 id="host-question-text" class="game-question"></h2>
+                <div id="players-answers-grid"></div>
+                <button onclick="nextQuestion()" class="btn-party-main" style="margin-top:20px; background: var(--party-purple);">Дальше ➡️</button>
             </div>
         </div>
 
-        <div id="player-screen" class="party-card game-card" style="display: none;">
-            <div class="status-badge">ИГРОК</div>
-            <h2 id="player-question-text" class="game-question">Ожидаем начала...</h2>
-            <div id="player-answer-area" class="answer-area">
-                <div class="waiting-spinner">⏳</div>
-                <p>Скоро здесь появится вопрос!</p>
+        <div id="player-screen" class="game-card" style="display: none;">
+            <span class="status-badge">Player</span>
+            
+            <div id="player-wait">
+                <span class="emoji-logo">🎈</span>
+                <h2 class="game-question">Ты в игре!</h2>
+                <p>Дождись, пока организатор нажмет «Старт»</p>
+            </div>
+
+            <div id="player-game-area" style="display: none;">
+                <h2 id="player-question-text" class="game-question"></h2>
+                <div id="player-answer-area"></div>
             </div>
         </div>
+
     </div>
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
