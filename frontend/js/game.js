@@ -3,6 +3,8 @@ let currentQuestions = [];
 let currentStep = 0;
 let scoreChanges = {};
 let scoreOverrides = {}; // Храним ручные правки: { "PlayerName_0": true/false }
+let answersHistory = {}
+
 
 const scoreOverride = {}; // key = playerName + "_" + step
 const urlParams = new URLSearchParams(window.location.search);
@@ -59,48 +61,27 @@ function startGame() {
 
 // ИСПРАВЛЕНИЕ 5: Замена стандартного alert/confirm на современный
 function nextQuestion() {
-    const players = document.querySelectorAll("#players-answers-grid .answer-card");
-    let allAnswered = true;
 
-    players.forEach(el => {
-        if(el.querySelector(".answer-text").innerText.includes("ожидает")) {
-            allAnswered = false;
-        }
+    socket.emit("check_answers_before_next", {
+        room: roomCode,
+        step: currentStep
     });
 
-    if(!allAnswered) {
-        showModernConfirm("Не все игроки ответили! Всё равно перейти к следующему вопросу?", proceedToNextQuestion);
-        return;
-    }
-    proceedToNextQuestion();
 }
 
 // Новая функция для современного алерта (оставляем твой класс party-card)
-function showModernConfirm(msg, callback) {
-    const overlay = document.createElement('div');
-    overlay.className = 'modern-confirm-overlay';
-    overlay.innerHTML = `
-        <div class="party-card modern-confirm-box">
-            <h3 style="margin-top: 0; color: var(--party-purple); font-size: 1.5rem;">Внимание! 👀</h3>
-            <p style="font-weight: 600; margin-bottom: 25px;">${msg}</p>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn-party-main" style="background: var(--error-red); flex: 1; padding: 12px;" id="btn-cancel">ОТМЕНА</button>
-                <button class="btn-party-main" style="background: var(--success-green); flex: 1; padding: 12px;" id="btn-confirm">ДАЛЬШЕ</button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-
-    document.getElementById('btn-cancel').onclick = () => document.body.removeChild(overlay);
-    document.getElementById('btn-confirm').onclick = () => {
-        document.body.removeChild(overlay);
-        callback();
+function showModernConfirm(msg, onConfirm) {
+    const overlay = document.getElementById('confirm-overlay');
+    overlay.style.display = 'flex';
+    document.getElementById('confirm-proceed-btn').onclick = () => {
+        overlay.style.display = 'none';
+        onConfirm();
     };
 }
 
 // Функция, которая вызывается, когда мы точно решили идти дальше
-function proceedToNextQuestion() {
-    if(currentStep < currentQuestions.length - 1) {
+function proceedToNext() {
+    if (currentStep < currentQuestions.length - 1) {
         socket.emit("next_question_signal", { room: roomCode });
     } else {
         socket.emit("finish_game_signal", { room: roomCode });
@@ -110,28 +91,12 @@ function proceedToNextQuestion() {
 
 // ИСПРАВЛЕНИЕ 2 и 3: Разрешаем менять очки всем (убрана блокировка if(!correct) return;)
 function changeScore(targetName, points) {
-    const key = targetName + "_" + currentStep;
-
-    const card = [...document.querySelectorAll("#players-answers-grid .answer-card")].find(c => c.querySelector(".answer-name").innerText === targetName);
-    if(!card) return;
-
-    // Убрана проверка if(!correct), чтобы можно было менять очки любому игроку
-
-    if(!scoreOverride[key]) scoreOverride[key] = 0;
-
-    // Высчитываем, каким станет оверрайд после нажатия
-    const newScore = scoreOverride[key] + points;
-
-    // Не даем уйти за пределы +1 и -1 за один вопрос (защита от спама кнопкой)
-    if(newScore > 1 || newScore < -1) return; 
-
     socket.emit("override_score", {
         room: roomCode,
         playerName: targetName,
-        points: points
+        points: points,
+        questionIndex: currentStep
     });
-
-    scoreOverride[key] = newScore;
 }
 
 // ИСПРАВЛЕНИЕ 4: Убрана логика 'done' (зеленый цвет для предыдущих)
@@ -140,36 +105,26 @@ function renderProgress() {
     const container = document.getElementById("questions-progress");
     if (!container) return;
 
-    // УБИРАЕМ КНОПКУ НАЗАД (Пункт 4)
-    // Если у тебя в HTML была кнопка с id="prev-btn", удали её или скрой:
-    const prevBtn = document.getElementById("prev-question-btn");
-    if (prevBtn) prevBtn.style.display = "none";
-
     container.innerHTML = currentQuestions.map((_, i) => {
-        let stateClass = "";
-        
-        if (i < currentStep) {
-            stateClass = "done";    // Пройденные (зеленые)
-        } else if (i === currentStep) {
-            stateClass = "active";  // Текущий (желтый/синий)
-        } else {
-            stateClass = "waiting"; // Будущие (серые)
-        }
+        let stateClass;
 
-        return `<div class="q-step ${stateClass}">${i + 1}</div>`;
+        if (i < currentStep) stateClass = "done";
+        else if (i === currentStep) stateClass = "active";
+        else stateClass = "future";
+        // Добавляем onclick прямо в HTML для перехода
+        return `<div class="q-step ${stateClass}" onclick="jumpToQuestion(${i})">${i + 1}</div>`;
     }).join("");
 }
 
 function jumpToQuestion(step) {
-
+    if (role !== 'host') return;
     currentStep = step;
-
-    socket.emit('move_to_step', {
-        room: roomCode,
-        step: step
-    });
-
-    refreshUI(); // обновляем карточки, прогресс и правильный ответ
+    socket.emit('move_to_step', { room: roomCode, step: step });
+    
+    // Сразу запрашиваем у сервера свежие данные игроков, 
+    // чтобы сработал update_answers с новым currentStep
+    socket.emit("get_update", roomCode); 
+    refreshUI();
 }
 
 function renderScoreboard(players) {
@@ -216,7 +171,13 @@ function handleScoreClick(playerName, points) {
 
 // Отправка ответа (для Игрока)
 function sendAnswer(val) {
-    socket.emit('send_answer', { room: roomCode, name: playerName, answer: val });
+    socket.emit('send_answer', { 
+        room: roomCode, 
+        name: playerName, 
+        answer: val, 
+        questionIndex: currentStep // Передаем индекс текущего вопроса
+    });
+    
     document.getElementById('player-answer-area').innerHTML = `
         <div class="empty-list-msg" style="margin-top:20px;">
             <h3>Ответ отправлен! 🚀</h3>
@@ -253,18 +214,12 @@ function getRandomEmoji() {
 socket.on('update_players', (players) => {
     const list = document.getElementById('lobby-players-list');
     if (list && role === 'host') {
-        const onlyPlayers = players.filter(p => !p.is_host);
-        
-        // Отрисовываем в новом компактном стиле: Иконка Имя
-        list.innerHTML = onlyPlayers.map(p => {
-            const emoji = getRandomEmoji(); // Генерируем эмодзи для отображения
-            return `
-                <div class="player-row-lobby">
-                    <span class="player-emoji-icon">${emoji}</span>
-                    <span class="player-name-lobby">${p.name}</span>
-                </div>
-            `;
-        }).join('');
+        list.innerHTML = players.filter(p => !p.is_host).map(p => `
+            <div class="player-row-lobby">
+                <span class="player-emoji-icon">${p.emoji || '👤'}</span>
+                <span class="player-name-lobby">${p.name}</span>
+            </div>
+        `).join('');
     }
 });
 
@@ -308,122 +263,138 @@ socket.on("game_started", (players) => {
 // Мы тоже добавляем эмодзи сюда, чтобы стиль был единым
 socket.on("update_answers", (players) => {
     if (role !== "host") return;
-
+    
+    renderScoreboard(players);
     const grid = document.getElementById("players-answers-grid");
     const currentQ = currentQuestions[currentStep];
 
-    grid.innerHTML = players
-        .filter(p => !p.is_host)
-        .map(p => {
-            const isAnswered = !!p.answer;
-            const isCorrect = isAnswered && p.answer.toLowerCase().trim() === currentQ.correct.toLowerCase().trim();
-            
-            // Логика кнопок (Пункт 2 твоих требований)
-            const key = `${p.name}_${currentStep}`;
-            const hasManualChange = scoreOverrides[key]; // Нажимал ли хост уже кнопку?
-            
-            let btnHTML = "";
-            if (isAnswered) {
-                if (isCorrect) {
-                    // Если верно: изначально кнопка -1. Если нажали (override), то +1
-                    btnHTML = !hasManualChange 
-                        ? `<button class="btn-score btn-minus" onclick="handleScoreClick('${p.name}', -1)">−1</button>`
-                        : `<button class="btn-score btn-plus" onclick="handleScoreClick('${p.name}', 1)">+1</button>`;
-                } else {
-                    // Если неверно: изначально кнопка +1. Если нажали (override), то -1
-                    btnHTML = !hasManualChange 
-                        ? `<button class="btn-score btn-plus" onclick="handleScoreClick('${p.name}', 1)">+1</button>`
-                        : `<button class="btn-score btn-minus" onclick="handleScoreClick('${p.name}', -1)">−1</button>`;
-                }
+    grid.innerHTML = players.filter(p => !p.is_host).map(p => {
+        const answers = p.answers_history || {};
+        const scores = p.scores_history || {};
+        
+        // 1. Получаем данные именно для ТЕКУЩЕГО шага (Пункт 4 исправлен)
+        const answerText = answers[currentStep.toString()];
+        const questionScore = scores[currentStep.toString()]; // Может быть undefined, 1 или -1
+        
+        const isAnswered = answerText !== undefined && answerText !== null;
+        
+        let statusClass = "waiting";
+        let displayAnswer = "⏳ ожидает ответа...";
+        let btnHTML = "";
+
+        if (isAnswered) {
+
+            const isCorrect = answerText.toLowerCase().trim() === currentQ.correct.toLowerCase().trim();
+
+            const currentStatus = questionScore ?? (isCorrect ? 1 : 0);
+
+            statusClass = currentStatus === 1 ? "correct" : "wrong";
+            displayAnswer = answerText;
+
+            if (currentStatus === 1) {
+                btnHTML = `<button class="btn-score btn-minus" onclick="changeScore('${p.name}', -1)">−1</button>`;
+            } else {
+                btnHTML = `<button class="btn-score btn-plus" onclick="changeScore('${p.name}', 1)">+1</button>`;
             }
 
-            const statusClass = isAnswered ? (isCorrect ? "correct" : "wrong") : "waiting";
-            const answerText = isAnswered 
-                ? `<span class="ans-label">Ответ:</span> <strong>${p.answer}</strong>` 
-                : `⏳ ожидает...`;
+        }
 
-            // Пункт 5: Добавляем смайлик p.emoji (убедись, что на бэкенде он передается в объекте игрока)
-            return `
-                <div class="answer-card ${statusClass}">
-                    <div class="answer-info">
-                        <div class="answer-name">${p.emoji || '👤'} ${p.name}</div>
-                        <div class="answer-text">${answerText}</div>
-                    </div>
-                    <div class="answer-buttons">
-                        ${btnHTML}
-                    </div>
+        return `
+            <div class="answer-card ${statusClass}">
+                <div class="answer-info">
+                    <div class="answer-name">${p.emoji || '👤'} ${p.name}</div>
+                    <div class="answer-text">${displayAnswer}</div>
                 </div>
-            `;
-        })
-        .join("");
+                <div class="answer-buttons">${btnHTML}</div>
+            </div>
+        `;
+    }).join("");
 });
+
+function renderHostAnswersGrid(players) {
+    const grid = document.getElementById("players-answers-grid");
+    const currentQ = currentQuestions[currentStep];
+
+    grid.innerHTML = players.filter(p => !p.is_host).map(p => {
+        // Берем ответ из истории, если мы вернулись назад (ПУНКТ 3)
+        const histAnswer = answersHistory[currentStep] ? answersHistory[currentStep][p.name] : null;
+        const displayAnswer = p.answer || histAnswer;
+        
+        const isAnswered = !!displayAnswer;
+        const isCorrect = isAnswered && displayAnswer.toLowerCase().trim() === currentQ.correct.toLowerCase().trim();
+        const statusClass = isAnswered ? (isCorrect ? "correct" : "wrong") : "waiting";
+
+        // ПУНКТ 2: Кнопки только если есть ответ
+        let buttons = "";
+        if (isAnswered) {
+            buttons = isCorrect 
+                ? `<button class="btn-score btn-minus" onclick="changeScore('${p.name}', -1)">-1</button>`
+                : `<button class="btn-score btn-plus" onclick="changeScore('${p.name}', 1)">+1</button>`;
+        }
+
+        return `
+            <div class="answer-card ${statusClass}">
+                <div class="answer-info">
+                    <div class="answer-name">${p.emoji || '👤'} ${p.name}</div>
+                    <div class="answer-text">${isAnswered ? displayAnswer : '⏳ ожидает...'}</div>
+                </div>
+                <div class="answer-buttons">${buttons}</div>
+            </div>
+        `;
+    }).join("");
+}
 
 socket.on('show_results', (data) => {
-    // Скрываем игровые экраны
     document.getElementById('host-screen').style.display = 'none';
     document.getElementById('player-screen').style.display = 'none';
-    
-    const finishScreen = document.getElementById('finish-screen');
-    finishScreen.style.display = 'block';
+    document.getElementById('finish-screen').style.display = 'block';
 
     const resultsList = document.getElementById('final-results-list');
-    const winner = data.results[0];
-
-    // Генерируем красивый список с визуализацией
-    resultsList.innerHTML = `
-        <div class="winner-announcement" style="margin-bottom: 30px; animation: tada 1s ease-in-out;">
-            <div style="font-size: 4rem;">🏆</div>
-            <h2 style="color: var(--party-purple); font-size: 1.8rem; margin: 10px 0;">${winner.name}</h2>
-            <p style="font-weight: 800; color: var(--party-pink); letter-spacing: 1px;">АБСОЛЮТНЫЙ ЧЕМПИОН!</p>
+    // Теперь данные берем напрямую из того, что прислал сервер (data.results)
+    resultsList.innerHTML = data.results.map((p, i) => `
+        <div class="player-row-lobby" style="${i === 0 ? 'border: 2px solid gold' : ''}">
+            <span class="player-emoji-icon">${p.emoji || '👤'}</span>
+            <span class="player-name-lobby" style="flex: 1">${i === 0 ? '👑 ' : ''}${p.name}</span>
+            <span style="font-weight: 800">${p.score} очков</span>
         </div>
-        
-        <div class="results-table">
-            ${data.results.map((p, i) => {
-                const emoji = getRandomEmoji(); // Твои новые эмодзи
-                const isWinner = i === 0;
-                return `
-                    <div class="player-row-lobby" style="${isWinner ? 'border: 2px solid var(--party-pink); background: #fffafb;' : ''}">
-                        <span style="font-weight: 800; width: 25px; color: #a1a1a1;">${i + 1}</span>
-                        <span class="player-emoji-icon">${isWinner ? '👑' : emoji}</span>
-                        <span class="player-name-lobby" style="flex-grow: 1;">${p.name}</span>
-                        <span style="font-weight: 800; color: var(--party-purple);">${p.score} <small>очков</small></span>
-                    </div>
-                `;
-            }).join('')}
-        </div>
-    `;
+    `).join('');
 });
 
-socket.on("move_to_next", () => {
+socket.on("move_to_next", (data) => {
 
-    currentStep++;
+    currentStep = data.step;
 
     refreshUI();
 
 })
 
-// Вспомогательные функции
-function refreshUI() {
+socket.on("answers_check_result", (data) => {
 
-    renderProgress();
+    if (!data.allAnswered) {
 
-    if (role === 'host') {
-
-        updateHostUI();
-
-        const btn = document.getElementById('next-btn');
-
-        btn.innerText =
-            (currentStep === currentQuestions.length - 1)
-            ? "Финиш"
-            : "Следующий";
+        showModernConfirm("Не все ответили! Всё равно идём дальше?", () => {
+            proceedToNext();
+        });
 
     } else {
-
-        renderPlayerQuestion();
-
+        proceedToNext();
     }
 
+});
+
+// Вспомогательные функции
+function refreshUI() {
+    renderProgress();
+    if (role === 'host') {
+        updateHostUI();
+        // Запрашиваем актуальные данные игроков для этого шага
+        socket.emit("get_update", roomCode); 
+        
+        const btn = document.getElementById('next-btn');
+        btn.innerText = (currentStep === currentQuestions.length - 1) ? "Финиш" : "Следующий";
+    } else {
+        renderPlayerQuestion();
+    }
 }
 
 function updateHostUI() {

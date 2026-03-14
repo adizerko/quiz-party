@@ -7,6 +7,10 @@ import fastapi_socketio as socketio
 from sqlalchemy.orm import Session
 
 from . import models, schemas, database
+import random
+
+PLAYER_EMOJIS = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵']
+
 
 app = FastAPI()
 
@@ -29,10 +33,12 @@ def get_players_in_quiz(db: Session, quiz_id: int):
     players = db.query(models.Player).filter(models.Player.quiz_id == quiz_id).all()
     return [
         {
-            "name": p.name, 
-            "answer": p.last_answer, 
-            "is_host": p.is_host, 
-            "score": p.score
+            "name": p.name,
+            "is_host": p.is_host,
+            "score": p.score,
+            "emoji": p.emoji or "👤",
+            "answers_history": p.answers_history or {},
+            "scores_history": p.scores_history or {} # Добавляем в выдачу
         } for p in players
     ]
 
@@ -77,38 +83,86 @@ async def handle_join(sid, data):
             ).first()
             
             if not player:
-                player = models.Player(name=name, sid=sid, quiz_id=quiz.id, is_host=is_host, score=0)
+                # 1. УНИКАЛЬНЫЕ СМАЙЛИКИ:
+                # Получаем уже занятые смайлы в этой комнате
+                used_emojis = [p.emoji for p in db.query(models.Player.emoji).filter(models.Player.quiz_id == quiz.id).all()]
+                available_emojis = [e for e in PLAYER_EMOJIS if e not in used_emojis]
+                
+                # Если все разобрали, берем любой из общего списка
+                assigned_emoji = random.choice(available_emojis if available_emojis else PLAYER_EMOJIS)
+                
+                player = models.Player(
+                    name=name, sid=sid, quiz_id=quiz.id, 
+                    is_host=is_host, score=0, emoji=assigned_emoji,
+                    answers_history={} 
+                )
                 db.add(player)
             else:
                 player.sid = sid
             
             db.commit()
+            # Важно: рассылаем всем обновленный список
             await sio_manager.emit('update_players', get_players_in_quiz(db, quiz.id), room=room)
     finally:
         db.close()
 
 @sio_manager.on('start_game_signal')
 async def handle_start(sid, data):
-    await sio_manager.emit('game_started', {}, room=data.get('room'))
-
-@sio_manager.on('send_answer')
-async def handle_answer(sid, data):
     room = data.get('room')
-    name = data.get('name')
-    answer = data.get('answer')
-    
     db = next(database.get_db())
     try:
         quiz = db.query(models.Quiz).filter(models.Quiz.code == room).first()
         if quiz:
-            player = db.query(models.Player).filter(
-                models.Player.quiz_id == quiz.id, 
-                models.Player.name == name
-            ).first()
-            if player:
-                player.last_answer = answer
-                db.commit()
-                await sio_manager.emit('update_answers', get_players_in_quiz(db, quiz.id), room=room)
+            # ОТПРАВЛЯЕМ СПИСОК ИГРОКОВ, а не пустой объект
+            players = get_players_in_quiz(db, quiz.id)
+            await sio_manager.emit('game_started', players, room=room)
+    finally:
+        db.close()
+
+@sio_manager.on('send_answer')
+async def handle_answer(sid, data):
+
+    room = data.get('room')
+    name = data.get('name')
+    answer = data.get('answer')
+    q_idx = str(data.get('questionIndex'))
+
+    db = next(database.get_db())
+
+    try:
+
+        quiz = db.query(models.Quiz).filter(models.Quiz.code == room).first()
+
+        player = db.query(models.Player).filter(
+            models.Player.quiz_id == quiz.id,
+            models.Player.name == name
+        ).first()
+
+        if player:
+
+            new_history = dict(player.answers_history or {})
+            new_history[q_idx] = answer
+            player.answers_history = new_history
+
+            # ✅ проверяем правильность
+            question = quiz.questions_data[int(q_idx)]
+
+            correct = question["correct"].lower().strip()
+            is_correct = answer.lower().strip() == correct
+
+            score_history = dict(player.scores_history or {})
+
+            score_history[q_idx] = 1 if is_correct else 0
+
+            player.scores_history = score_history
+            player.score = sum(score_history.values())
+
+            db.commit()
+
+            players_data = get_players_in_quiz(db, player.quiz_id)
+
+            await sio_manager.emit('update_answers', players_data, room=room)
+
     finally:
         db.close()
 
@@ -119,37 +173,81 @@ async def handle_next_question(sid, data):
     try:
         quiz = db.query(models.Quiz).filter(models.Quiz.code == room).first()
         if quiz:
-            db.query(models.Player).filter(models.Player.quiz_id == quiz.id).update({"last_answer": None})
+            # УДАЛИ ЭТУ СТРОКУ, она вызывает ошибку:
+            # db.query(models.Player).filter(models.Player.quiz_id == quiz.id).update({"last_answer": None})
+            
+            players = get_players_in_quiz(db, quiz.id)
+            quiz.current_step += 1
             db.commit()
-            await sio_manager.emit('move_to_next', {}, room=room)
-            await sio_manager.emit('update_answers', get_players_in_quiz(db, quiz.id), room=room)
+
+            await sio_manager.emit(
+                'move_to_next',
+                {"step": quiz.current_step},
+                room=room
+            )
     finally:
         db.close()
 
 @sio_manager.on('move_to_step')
 async def handle_move_step(sid, data):
+
     room = data.get('room')
     step = data.get('step')
-    await sio_manager.emit('move_to_step', {'step': step}, room=room)
+
+    db = next(database.get_db())
+
+    try:
+
+        quiz = db.query(models.Quiz).filter(models.Quiz.code == room).first()
+
+        players = get_players_in_quiz(db, quiz.id)
+
+        await sio_manager.emit(
+            "update_answers",
+            players,
+            room=room
+        )
+
+    finally:
+        db.close()
 
 @sio_manager.on('override_score')
 async def handle_override(sid, data):
+
     room = data.get('room')
     player_name = data.get('playerName')
     points = data.get('points')
-    
+    q_idx = str(data.get('questionIndex'))
+
     db = next(database.get_db())
+
     try:
-        quiz = db.query(models.Quiz).filter(models.Quiz.code == room).first()
-        if quiz:
-            player = db.query(models.Player).filter(
-                models.Player.quiz_id == quiz.id, 
-                models.Player.name == player_name
-            ).first()
-            if player:
-                player.score += points
-                db.commit()
-                await sio_manager.emit('update_answers', get_players_in_quiz(db, quiz.id), room=room)
+        player = db.query(models.Player).join(models.Quiz).filter(
+            models.Quiz.code == room,
+            models.Player.name == player_name
+        ).first()
+
+        if player:
+
+            history = dict(player.scores_history or {})
+            current = history.get(q_idx, 0)
+
+            if points == 1:
+                history[q_idx] = 1
+            elif points == -1:
+                history[q_idx] = 0
+
+            player.scores_history = history
+            player.score = sum(history.values())
+
+            db.commit()
+
+            await sio_manager.emit(
+                'update_answers',
+                get_players_in_quiz(db, player.quiz_id),
+                room=room
+            )
+
     finally:
         db.close()
 
@@ -165,8 +263,48 @@ async def handle_finish(sid, data):
                 models.Player.is_host == False
             ).order_by(models.Player.score.desc()).all()
             
-            results = [{"name": p.name, "score": p.score} for p in players]
+            results = [
+                {
+                    "name": p.name,
+                    "score": p.score,
+                    "emoji": p.emoji
+                }
+                for p in players
+            ]
             await sio_manager.emit('show_results', {"results": results}, room=room)
+    finally:
+        db.close()
+
+@sio_manager.on("check_answers_before_next")
+async def check_answers(sid, data):
+
+    room = data.get("room")
+    step = str(data.get("step"))
+
+    db = next(database.get_db())
+
+    try:
+        quiz = db.query(models.Quiz).filter(models.Quiz.code == room).first()
+
+        players = db.query(models.Player).filter(
+            models.Player.quiz_id == quiz.id,
+            models.Player.is_host == False
+        ).all()
+
+        all_answered = True
+
+        for p in players:
+            hist = p.answers_history or {}
+            if step not in hist:
+                all_answered = False
+                break
+
+        await sio_manager.emit(
+            "answers_check_result",
+            {"allAnswered": all_answered},
+            room=sid
+        )
+
     finally:
         db.close()
 
