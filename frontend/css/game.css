@@ -183,7 +183,7 @@ body {
 
 /* Эмодзи-иконка */
 .player-emoji-icon {
-    font-size: 1.8rem; /* Крупный эмодзи */
+    font-size: 2.8rem; /* Крупный эмодзи */
     margin-right: 15px;
     display: flex;
     align-items: center;
@@ -394,4 +394,20 @@ border:2px solid #e5e7eb;
     max-width: 350px;
     padding: 30px 20px;
     animation: tada 0.5s ease-in-out;
+}
+
+.q-step.active {
+    background: #6366f1;
+    color: white;
+    transform: scale(1.15);
+    box-shadow: 0 0 10px rgba(99,102,241,0.6);
+}
+
+.q-step.done {
+    background: #22c55e;
+    color: white;
+}
+
+.q-step.future {
+    background: #e5e7eb;
 }

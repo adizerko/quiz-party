@@ -1,6 +1,8 @@
 const socket = io();
-let currentQuestions = [];
+
 let currentStep = 0;
+let maxReachedStep = 0;
+let currentQuestions = [];
 let scoreChanges = {};
 let scoreOverrides = {}; // Храним ручные правки: { "PlayerName_0": true/false }
 let answersHistory = {}
@@ -102,27 +104,39 @@ function changeScore(targetName, points) {
 // ИСПРАВЛЕНИЕ 4: Убрана логика 'done' (зеленый цвет для предыдущих)
 // ИСПРАВЛЕНИЕ 4: Отрисовка прогресса с запоминанием пройденного пути
 function renderProgress() {
+
     const container = document.getElementById("questions-progress");
     if (!container) return;
 
     container.innerHTML = currentQuestions.map((_, i) => {
+
         let stateClass;
 
-        if (i < currentStep) stateClass = "done";
-        else if (i === currentStep) stateClass = "active";
-        else stateClass = "future";
-        // Добавляем onclick прямо в HTML для перехода
-        return `<div class="q-step ${stateClass}" onclick="jumpToQuestion(${i})">${i + 1}</div>`;
+        if (i === currentStep) {
+            stateClass = "active";
+        }
+        else if (i < maxReachedStep) {
+            stateClass = "done";
+        }
+        else {
+            stateClass = "future";
+        }
+
+        return `
+        <div class="q-step ${stateClass}" onclick="jumpToQuestion(${i})">
+            ${i === currentStep ? "⬇️" : ""}
+            ${i + 1}
+        </div>
+        `;
+
     }).join("");
+
 }
 
 function jumpToQuestion(step) {
     if (role !== 'host') return;
     currentStep = step;
     socket.emit('move_to_step', { room: roomCode, step: step });
-    
-    // Сразу запрашиваем у сервера свежие данные игроков, 
-    // чтобы сработал update_answers с новым currentStep
     socket.emit("get_update", roomCode); 
     refreshUI();
 }
@@ -154,7 +168,6 @@ function renderScoreboard(players) {
 function handleScoreClick(playerName, points) {
     const key = `${playerName}_${currentStep}`;
     
-    // Отправляем на сервер изменение баллов
     socket.emit("override_score", {
         room: roomCode,
         playerName: playerName,
@@ -162,10 +175,8 @@ function handleScoreClick(playerName, points) {
         questionIndex: currentStep
     });
 
-    // Инвертируем состояние для смены кнопки
     scoreOverrides[key] = !scoreOverrides[key];
     
-    // Просим сервер прислать обновленный список игроков, чтобы сработал update_answers
     socket.emit("get_update", roomCode); 
 }
 
@@ -242,10 +253,7 @@ socket.on("game_started", (players) => {
                         <div class="answer-name">${p.name}</div>
                         <div class="answer-text">⏳ ожидает ответа</div>
                     </div>
-                    <div class="answer-buttons">
-                        <button class="btn-score btn-plus" onclick="changeScore('${p.name}', 1)">+1</button>
-                        <button class="btn-score btn-minus" onclick="changeScore('${p.name}', -1)">−1</button>
-                    </div>
+                    <div class="answer-buttons"></div>
                 </div>
             `).join('');
 
@@ -259,8 +267,6 @@ socket.on("game_started", (players) => {
     renderProgress();
 });
 
-// 2. Обновленный экран ответов (во время игры)
-// Мы тоже добавляем эмодзи сюда, чтобы стиль был единым
 socket.on("update_answers", (players) => {
     if (role !== "host") return;
     
@@ -269,32 +275,40 @@ socket.on("update_answers", (players) => {
     const currentQ = currentQuestions[currentStep];
 
     grid.innerHTML = players.filter(p => !p.is_host).map(p => {
+
         const answers = p.answers_history || {};
         const scores = p.scores_history || {};
-        
-        // 1. Получаем данные именно для ТЕКУЩЕГО шага (Пункт 4 исправлен)
-        const answerText = answers[currentStep.toString()];
-        const questionScore = scores[currentStep.toString()]; // Может быть undefined, 1 или -1
-        
+
+        const answerText = answers[currentStep];
+        const questionScore = scores[currentStep];
+
         const isAnswered = answerText !== undefined && answerText !== null;
-        
+
         let statusClass = "waiting";
         let displayAnswer = "⏳ ожидает ответа...";
         let btnHTML = "";
 
         if (isAnswered) {
 
-            const isCorrect = answerText.toLowerCase().trim() === currentQ.correct.toLowerCase().trim();
-
-            const currentStatus = questionScore ?? (isCorrect ? 1 : 0);
-
-            statusClass = currentStatus === 1 ? "correct" : "wrong";
             displayAnswer = answerText;
 
-            if (currentStatus === 1) {
-                btnHTML = `<button class="btn-score btn-minus" onclick="changeScore('${p.name}', -1)">−1</button>`;
+            if (questionScore === 1) {
+
+                statusClass = "correct";
+
+                btnHTML = `
+                    <button class="btn-score btn-minus"
+                    onclick="changeScore('${p.name}', -1)">−1</button>
+                `;
+
             } else {
-                btnHTML = `<button class="btn-score btn-plus" onclick="changeScore('${p.name}', 1)">+1</button>`;
+
+                statusClass = "wrong";
+
+                btnHTML = `
+                    <button class="btn-score btn-plus"
+                    onclick="changeScore('${p.name}', 1)">+1</button>
+                `;
             }
 
         }
@@ -302,7 +316,7 @@ socket.on("update_answers", (players) => {
         return `
             <div class="answer-card ${statusClass}">
                 <div class="answer-info">
-                    <div class="answer-name">${p.emoji || '👤'} ${p.name}</div>
+                    <div class="answer-name">${p.emoji} ${p.name}</div>
                     <div class="answer-text">${displayAnswer}</div>
                 </div>
                 <div class="answer-buttons">${btnHTML}</div>
@@ -364,9 +378,13 @@ socket.on("move_to_next", (data) => {
 
     currentStep = data.step;
 
+    if (currentStep > maxReachedStep) {
+        maxReachedStep = currentStep;
+    }
+
     refreshUI();
 
-})
+});
 
 socket.on("answers_check_result", (data) => {
 

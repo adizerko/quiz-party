@@ -168,23 +168,36 @@ async def handle_answer(sid, data):
 
 @sio_manager.on('next_question_signal')
 async def handle_next_question(sid, data):
+
     room = data.get('room')
     db = next(database.get_db())
+
     try:
+
         quiz = db.query(models.Quiz).filter(models.Quiz.code == room).first()
+
         if quiz:
-            # УДАЛИ ЭТУ СТРОКУ, она вызывает ошибку:
-            # db.query(models.Player).filter(models.Player.quiz_id == quiz.id).update({"last_answer": None})
-            
-            players = get_players_in_quiz(db, quiz.id)
+
+            # увеличиваем шаг игры
             quiz.current_step += 1
             db.commit()
 
+            players = get_players_in_quiz(db, quiz.id)
+
+            # сообщаем всем, что начался новый вопрос
             await sio_manager.emit(
                 'move_to_next',
                 {"step": quiz.current_step},
                 room=room
             )
+
+            # ВАЖНО: обновляем карточки игроков
+            await sio_manager.emit(
+                'update_answers',
+                players,
+                room=room
+            )
+
     finally:
         db.close()
 
