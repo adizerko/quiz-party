@@ -406,3 +406,20 @@ border:2px solid #e5e7eb;
 .q-step.future {
     background: #e5e7eb;
 }
+
+/* Пульсирующая точка для текущего активного вопроса */
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--party-pink);
+    border-radius: 50%;
+    margin-top: 4px;
+    box-shadow: 0 0 0 0 rgba(255, 133, 161, 0.7);
+    animation: pulse-dot-anim 1.5s infinite;
+}
+
+@keyframes pulse-dot-anim {
+    0% { box-shadow: 0 0 0 0 rgba(255, 133, 161, 0.7); }
+    70% { box-shadow: 0 0 0 6px rgba(255, 133, 161, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 133, 161, 0); }
+}

@@ -5,6 +5,7 @@ let maxReachedStep = 0;
 let currentQuestions = [];
 let scoreChanges = {};
 let scoreOverrides = {};
+
 let answersHistory = {}
 
 
@@ -100,22 +101,18 @@ function renderProgress() {
 
     container.innerHTML = currentQuestions.map((_, i) => {
         let stateClass = "future";
-        
-        if (i < maxReachedStep) {
-            stateClass = "done";
-        }
-        if (i === currentStep) {
-            stateClass = "active";
-        }
+        if (i < maxReachedStep) stateClass = "done";
+        if (i === currentStep) stateClass = "active";
+
+        // Точка пульсирует именно под тем вопросом, на котором реально идет игра (maxReachedStep)
+        const showDot = (i === maxReachedStep);
 
         return `
         <div class="q-step-wrapper" style="display: inline-flex; flex-direction: column; align-items: center; margin: 0 4px; cursor: pointer;">
-            <div style="font-size: 1.2rem; height: 24px; margin-bottom: 2px;">
-                ${i === currentStep ? "⬇️" : ""}
-            </div>
             <div class="q-step ${stateClass}" onclick="jumpToQuestion(${i})">
                 ${i + 1}
             </div>
+            ${showDot ? '<div class="pulse-dot"></div>' : '<div style="height: 12px; margin-top: 4px;"></div>'}
         </div>
         `;
     }).join("");
@@ -130,7 +127,6 @@ function jumpToQuestion(step) {
 }
 
 function renderScoreboard(players) {
-
     const board = document.getElementById("scoreboard");
     if (!board) return;
 
@@ -138,19 +134,20 @@ function renderScoreboard(players) {
         .filter(p => !p.is_host)
         .sort((a, b) => (b.score || 0) - (a.score || 0));
 
-    board.innerHTML = sorted.map((p, i) => {
+    // Находим самый высокий балл
+    const maxScore = sorted.length > 0 ? sorted[0].score : 0;
 
-        const leader = i === 0;
+    board.innerHTML = sorted.map((p, i) => {
+        // Лидер — каждый, у кого балл равен максимальному (и он больше нуля)
+        const isLeader = p.score === maxScore && maxScore > 0;
 
         return `
-        <div class="score-row ${leader ? "leader-row" : ""}">
-            <span>${leader ? "👑" : i + 1 + "."} ${p.name}</span>
+        <div class="score-row ${isLeader ? "leader-row" : ""}">
+            <span>${isLeader ? "👑" : i + 1 + "."} ${p.name}</span>
             <span>${p.score || 0} 🏆</span>
         </div>
         `;
-
     }).join("");
-
 }
 
 function handleScoreClick(playerName, points) {
@@ -216,6 +213,8 @@ socket.on('update_players', (players) => {
 
 
 socket.on("game_started", (players) => {
+    const me = players.find(p => p.name === playerName);
+    if (me) myEmoji = me.emoji;
     if (role === "host") {
         document.getElementById("host-lobby").style.display = "none";
         document.getElementById("host-game-area").style.display = "block";
@@ -257,35 +256,34 @@ socket.on("update_answers", (players) => {
     grid.innerHTML = players.filter(p => !p.is_host).map(p => {
         const answers = p.answers_history || {};
         const scores = p.scores_history || {};
-
-        // Явно приводим шаг к строке, так как ключи в JSON — это строки
         const stepKey = currentStep.toString();
         const answerText = answers[stepKey];
         const questionScore = scores[stepKey];
-
-        // Строгая проверка, что ответ реально существует
         const isAnswered = answerText !== undefined && answerText !== null && answerText.trim() !== "";
 
         let statusClass = "waiting";
         let displayAnswer = "⏳ ожидает ответа...";
         let btnHTML = "";
 
-        // Кнопки генерируются ТОЛЬКО если игрок уже ответил
         if (isAnswered) {
             displayAnswer = answerText;
-            
-            // Если балл еще не выставлен вручную, проверяем автоматически
             const isCorrect = answerText.toLowerCase().trim() === currentQ.correct.toLowerCase().trim();
             const currentStatus = questionScore !== undefined ? questionScore : (isCorrect ? 1 : 0);
 
+            // КНОПКИ АДМИНА (изменен дизайн и текст)
             if (currentStatus === 1) {
                 statusClass = "correct";
-                btnHTML = `<button class="btn-score btn-minus" onclick="changeScore('${p.name}', -1)">−1</button>`;
+                btnHTML = `<button class="btn-score btn-minus" style="padding: 8px 12px; box-shadow: 0 4px 10px rgba(255,118,117,0.3);" onclick="changeScore('${p.name}', -1)">❌ Забрать балл</button>`;
             } else {
                 statusClass = "wrong";
-                btnHTML = `<button class="btn-score btn-plus" onclick="changeScore('${p.name}', 1)">+1</button>`;
+                btnHTML = `<button class="btn-score btn-plus" style="padding: 8px 12px; box-shadow: 0 4px 10px rgba(46,204,113,0.3);" onclick="changeScore('${p.name}', 1)">✅ Дать балл</button>`;
             }
         }
+
+        // КРАСИВОЕ ВЫДЕЛЕНИЕ ОТВЕТА ИГРОКА
+        const answerHtml = isAnswered 
+            ? `<div style="font-size: 1.2rem; font-weight: 800; color: #2d3436; background: rgba(0,0,0,0.04); padding: 6px 12px; border-radius: 8px; display: inline-block; margin-top: 4px;">${displayAnswer}</div>`
+            : `<div class="answer-text">${displayAnswer}</div>`;
 
         return `
             <div class="answer-card ${statusClass}">
@@ -294,7 +292,7 @@ socket.on("update_answers", (players) => {
                         <span style="font-size: 2rem;">${p.emoji || '👤'}</span> 
                         <span style="font-size: 1.2rem; font-weight: bold;">${p.name}</span>
                     </div>
-                    <div class="answer-text">${displayAnswer}</div>
+                    ${answerHtml}
                 </div>
                 <div class="answer-buttons">${btnHTML}</div>
             </div>
@@ -306,14 +304,27 @@ socket.on('show_results', (data) => {
     document.getElementById('host-screen').style.display = 'none';
     document.getElementById('player-screen').style.display = 'none';
     document.getElementById('finish-screen').style.display = 'block';
+    
     const resultsList = document.getElementById('final-results-list');
-    resultsList.innerHTML = data.results.map((p, i) => `
-        <div class="player-row-lobby" style="${i === 0 ? 'border: 2px solid gold' : ''}">
-            <span class="player-emoji-icon">${p.emoji || '👤'}</span>
-            <span class="player-name-lobby" style="flex: 1">${i === 0 ? '👑 ' : ''}${p.name}</span>
-            <span style="font-weight: 800">${p.score} очков</span>
+    const maxScore = data.results.length > 0 ? data.results[0].score : 0;
+
+    resultsList.innerHTML = `
+        <div style="text-align: center; margin-bottom: 25px;">
+            <h2 style="color: var(--party-purple); font-size: 2.2rem; margin: 0;">🏆 Итоги игры! 🏆</h2>
         </div>
-    `).join('');
+        ${data.results.map((p, i) => {
+            const isWinner = p.score === maxScore && maxScore > 0;
+            return `
+            <div class="player-row-lobby" style="${isWinner ? 'border: 2px solid gold; background: #fffdf0; transform: scale(1.03); box-shadow: 0 8px 20px rgba(255,215,0,0.3); margin-bottom: 15px;' : 'opacity: 0.9'}">
+                <span class="player-emoji-icon" style="${isWinner ? 'font-size: 3.5rem;' : ''}">${p.emoji || '👤'}</span>
+                <span class="player-name-lobby" style="flex: 1; ${isWinner ? 'font-size: 1.4rem; color: #d4af37;' : ''}">${isWinner ? '👑 ' : ''}${p.name}</span>
+                <span style="font-weight: 900; font-size: ${isWinner ? '1.5rem' : '1.2rem'}; color: var(--party-purple); background: #f0ebf8; padding: 5px 12px; border-radius: 15px;">
+                    ${p.score}
+                </span>
+            </div>
+            `;
+        }).join('')}
+    `;
 });
 
 socket.on("move_to_next", (data) => {
@@ -371,9 +382,19 @@ function renderPlayerQuestion() {
     
     if (!q) return;
 
-    title.innerText =
-    `${currentStep + 1} / ${currentQuestions.length}
-    ${q.text}`;
+    // Добавлена плашка с именем и эмодзи
+    title.innerHTML = `
+        <div style="background: white; padding: 8px 20px; border-radius: 20px; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; color: #333;">
+            <span style="font-size: 1.6rem;">${myEmoji}</span>
+            <span style="font-size: 1.1rem; font-weight: 800;">${playerName}</span>
+        </div>
+        <div style="color: var(--party-purple); font-weight: 700; margin-bottom: 8px; font-size: 0.9rem; text-transform: uppercase;">
+            Вопрос ${currentStep + 1} из ${currentQuestions.length}
+        </div>
+        <div style="font-size: 1.3rem; font-weight: 800; line-height: 1.4;">
+            ${q.text}
+        </div>
+    `;
     
     if (q.type === 'options') {
         area.innerHTML = `
