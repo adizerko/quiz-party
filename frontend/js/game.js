@@ -1,5 +1,7 @@
 const socket = io();
 
+let isGameStarted = false;
+let myEmoji = '👤';
 let currentStep = 0;
 let maxReachedStep = 0;
 let currentQuestions = [];
@@ -32,6 +34,7 @@ async function init() {
                 name: playerName, 
                 role: role 
             });
+            socket.emit('request_sync', { room: roomCode, name: playerName });
 
             if (role === 'host') {
                 document.getElementById('host-screen').style.display = 'block';
@@ -48,16 +51,8 @@ async function init() {
 }
 
 function startGame() {
-
     currentStep = 0;
-
     socket.emit('start_game_signal', { room: roomCode });
-
-    setTimeout(() => {
-        updateHostUI();
-        renderProgress();
-    }, 100);
-
 }
 
 function nextQuestion() {
@@ -213,7 +208,11 @@ socket.on('update_players', (players) => {
 
 
 socket.on("game_started", (players) => {
+    currentStep = 0; 
+    maxReachedStep = 0;
+
     const me = players.find(p => p.name === playerName);
+    
     if (me) myEmoji = me.emoji;
     if (role === "host") {
         document.getElementById("host-lobby").style.display = "none";
@@ -251,6 +250,8 @@ socket.on("update_answers", (players) => {
     
     renderScoreboard(players);
     const grid = document.getElementById("players-answers-grid");
+    if (!grid) return; // Защита от ошибок
+
     const currentQ = currentQuestions[currentStep];
 
     grid.innerHTML = players.filter(p => !p.is_host).map(p => {
@@ -259,7 +260,9 @@ socket.on("update_answers", (players) => {
         const stepKey = currentStep.toString();
         const answerText = answers[stepKey];
         const questionScore = scores[stepKey];
-        const isAnswered = answerText !== undefined && answerText !== null && answerText.trim() !== "";
+        
+        // ПРОВЕРКА: есть ли ответ в истории?
+        const isAnswered = (answerText !== undefined && answerText !== null && answerText.toString().trim() !== "");
 
         let statusClass = "waiting";
         let displayAnswer = "⏳ ожидает ответа...";
@@ -270,29 +273,32 @@ socket.on("update_answers", (players) => {
             const isCorrect = answerText.toLowerCase().trim() === currentQ.correct.toLowerCase().trim();
             const currentStatus = questionScore !== undefined ? questionScore : (isCorrect ? 1 : 0);
 
-            // КНОПКИ АДМИНА (изменен дизайн и текст)
             if (currentStatus === 1) {
                 statusClass = "correct";
-                btnHTML = `<button class="btn-score btn-minus" style="padding: 8px 12px; box-shadow: 0 4px 10px rgba(255,118,117,0.3);" onclick="changeScore('${p.name}', -1)">❌ Забрать балл</button>`;
+                btnHTML = `<div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 0.6rem; font-weight: 800; color: #2ed573;">ВЕРНО</span>
+                                <button class="btn-control btn-reject" onclick="changeScore('${p.name}', -1)">
+                                    <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+                                </button>
+                           </div>`;
             } else {
                 statusClass = "wrong";
-                btnHTML = `<button class="btn-score btn-plus" style="padding: 8px 12px; box-shadow: 0 4px 10px rgba(46,204,113,0.3);" onclick="changeScore('${p.name}', 1)">✅ Дать балл</button>`;
+                btnHTML = `<button class="btn-control btn-accept" onclick="changeScore('${p.name}', 1)">
+                                <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"></path></svg>
+                           </button>`;
             }
         }
-
-        // КРАСИВОЕ ВЫДЕЛЕНИЕ ОТВЕТА ИГРОКА
-        const answerHtml = isAnswered 
-            ? `<div style="font-size: 1.2rem; font-weight: 800; color: #2d3436; background: rgba(0,0,0,0.04); padding: 6px 12px; border-radius: 8px; display: inline-block; margin-top: 4px;">${displayAnswer}</div>`
-            : `<div class="answer-text">${displayAnswer}</div>`;
 
         return `
             <div class="answer-card ${statusClass}">
                 <div class="answer-info">
                     <div class="answer-name" style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 2rem;">${p.emoji || '👤'}</span> 
-                        <span style="font-size: 1.2rem; font-weight: bold;">${p.name}</span>
+                        <span style="font-size: 1.8rem;">${p.emoji || '👤'}</span> 
+                        <span style="font-size: 1.1rem; font-weight: bold;">${p.name}</span>
                     </div>
-                    ${answerHtml}
+                    <div style="font-size: 1.1rem; font-weight: 800; color: #2d3436; background: rgba(0,0,0,0.04); padding: 4px 10px; border-radius: 8px; display: inline-block; margin-top: 4px;">
+                        ${displayAnswer}
+                    </div>
                 </div>
                 <div class="answer-buttons">${btnHTML}</div>
             </div>
@@ -306,25 +312,52 @@ socket.on('show_results', (data) => {
     document.getElementById('finish-screen').style.display = 'block';
     
     const resultsList = document.getElementById('final-results-list');
-    const maxScore = data.results.length > 0 ? data.results[0].score : 0;
+    if (!resultsList) return;
+
+    const players = data.results;
+    const maxScore = players.length > 0 ? players[0].score : 0;
+    
+    const winners = players.filter(p => p.score === maxScore && maxScore > 0);
+    const others = players.filter(p => p.score !== maxScore || maxScore === 0);
 
     resultsList.innerHTML = `
-        <div style="text-align: center; margin-bottom: 25px;">
-            <h2 style="color: var(--party-purple); font-size: 2.2rem; margin: 0;">🏆 Итоги игры! 🏆</h2>
-        </div>
-        ${data.results.map((p, i) => {
-            const isWinner = p.score === maxScore && maxScore > 0;
-            return `
-            <div class="player-row-lobby" style="${isWinner ? 'border: 2px solid gold; background: #fffdf0; transform: scale(1.03); box-shadow: 0 8px 20px rgba(255,215,0,0.3); margin-bottom: 15px;' : 'opacity: 0.9'}">
-                <span class="player-emoji-icon" style="${isWinner ? 'font-size: 3.5rem;' : ''}">${p.emoji || '👤'}</span>
-                <span class="player-name-lobby" style="flex: 1; ${isWinner ? 'font-size: 1.4rem; color: #d4af37;' : ''}">${isWinner ? '👑 ' : ''}${p.name}</span>
-                <span style="font-weight: 900; font-size: ${isWinner ? '1.5rem' : '1.2rem'}; color: var(--party-purple); background: #f0ebf8; padding: 5px 12px; border-radius: 15px;">
-                    ${p.score}
-                </span>
+        <div class="confetti-wrapper">
+            <div style="margin-bottom: 20px; text-align: center;">
+                <span class="crown-appear">👑</span>
+                <h2 style="color: var(--party-purple); font-size: 1.8rem; margin: 5px 0; font-weight: 800;">Итоги викторины</h2>
             </div>
-            `;
-        }).join('')}
-    `;
+
+            ${winners.map(w => `
+                <div class="player-row-lobby winner-card-epic" style="padding: 15px 20px; justify-content: flex-start;">
+                    <span class="player-emoji-icon" style="font-size: 3rem; margin-right: 15px;">${w.emoji}</span>
+                    <div style="text-align: left; flex: 1;">
+                        <div style="font-size: 0.7rem; opacity: 0.6; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Победитель</div>
+                        <div class="shiny-text-name" style="font-size: 1.4rem;">${w.name}</div>
+                    </div>
+                    <div style="background: #FFD700; color: #000; padding: 5px 15px; border-radius: 15px; font-weight: 800; font-size: 1.2rem; margin-left: 10px;">
+                        ${w.score}
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        
+        ${others.length > 0 ? `
+            <div style="margin-top: 25px;">
+                <h4 style="opacity: 0.5; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; padding-left: 10px;">Рейтинг игроков</h4>
+                <div style="background: rgba(255,255,255,0.3); border-radius: 15px; padding: 5px;">
+                    ${others.map((p, i) => `
+                        <div class="player-row-lobby" style="background: transparent; border: none; border-bottom: 1px solid rgba(0,0,0,0.03); box-shadow: none; margin-bottom: 0; padding: 10px 15px;">
+                            <span style="font-weight: 800; opacity: 0.3; width: 25px; font-size: 0.9rem;">#${i + 2}</span>
+                            <span class="player-emoji-icon" style="font-size: 1.4rem; margin-right: 10px;">${p.emoji}</span>
+                            <span class="player-name-lobby" style="flex: 1; text-align: left; font-size: 1rem; font-weight: 600;">${p.name}</span>
+                            <span style="font-weight: 700; opacity: 0.7; font-size: 1rem; background: rgba(0,0,0,0.04); padding: 3px 10px; border-radius: 10px;">${p.score}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : ''}
+        
+        `;
 });
 
 socket.on("move_to_next", (data) => {
@@ -349,6 +382,42 @@ socket.on("answers_check_result", (data) => {
 
 });
 
+// Новый обработчик для восстановления состояния
+socket.on('sync_state', (data) => {
+    currentStep = data.currentStep;
+    if (data.emoji) myEmoji = data.emoji;
+
+    if (role === 'host') {
+        // Хост переходит в игру ТОЛЬКО если шаг 0 или выше
+        if (currentStep >= 0) {
+            document.getElementById("host-lobby").style.display = "none";
+            document.getElementById("host-game-area").style.display = "block";
+            updateHostUI();
+            renderProgress();
+        } else {
+            // Если шаг -1, принудительно показываем лобби
+            document.getElementById("host-lobby").style.display = "block";
+            document.getElementById("host-game-area").style.display = "none";
+        }
+    } else {
+        // Логика для игрока
+        if (data.isStarted) {
+            document.getElementById("player-wait").style.display = "none";
+            document.getElementById("player-game-area").style.display = "block";
+            renderPlayerQuestion();
+            
+            if (data.playerAnswer) {
+                document.getElementById('player-answer-area').innerHTML = `
+                    <div class="empty-list-msg" style="margin-top:20px;">
+                        <h3>Ответ уже отправлен! 🚀</h3>
+                        <p>Вы ответили: <b>${data.playerAnswer}</b></p>
+                    </div>
+                `;
+            }
+        }
+    }
+});
+
 function refreshUI() {
     renderProgress();
     if (role === 'host') {
@@ -364,50 +433,64 @@ function refreshUI() {
 }
 
 function updateHostUI() {
-
     const q = currentQuestions[currentStep];
+    const isLastQuestion = currentStep === currentQuestions.length - 1;
 
-    document.getElementById("host-question-text").innerText =
-        `${currentStep + 1}. ${q.text}`;
+    document.getElementById("host-question-text").innerText = `${currentStep + 1}. ${q.text}`;
+    document.getElementById("correct-answer").innerText = "Правильный ответ: " + q.correct;
 
-    document.getElementById("correct-answer").innerText =
-        "Правильный ответ: " + q.correct;
-
+    // Меняем текст и стиль кнопки на последнем шаге
+    const nextBtn = document.getElementById('next-btn');
+    if (nextBtn) {
+        if (isLastQuestion) {
+            nextBtn.innerText = "🏆 ПОДВЕСТИ ИТОГИ";
+            nextBtn.style.background = "linear-gradient(135deg, #f6d365 0%, #fda085 100%)";
+        } else {
+            nextBtn.innerText = "СЛЕДУЮЩИЙ ВОПРОС";
+            nextBtn.style.background = "var(--party-pink)";
+        }
+    }
 }
 
 function renderPlayerQuestion() {
     const q = currentQuestions[currentStep];
     const area = document.getElementById('player-answer-area');
     const title = document.getElementById('player-question-text');
-    
     if (!q) return;
 
-    // Добавлена плашка с именем и эмодзи
     title.innerHTML = `
-        <div style="background: white; padding: 8px 20px; border-radius: 20px; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; color: #333;">
-            <span style="font-size: 1.6rem;">${myEmoji}</span>
-            <span style="font-size: 1.1rem; font-weight: 800;">${playerName}</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.6); padding: 10px 15px; border-radius: 20px; margin-bottom: 25px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 2rem;">${myEmoji}</span>
+                <div style="text-align: left;">
+                    <div style="font-size: 0.7rem; opacity: 0.6; font-weight: 700;">ИГРОК</div>
+                    <div style="font-weight: 800; font-size: 1rem;">${playerName}</div>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 0.7rem; opacity: 0.6; font-weight: 700;">ВОПРОС</div>
+                <div style="font-weight: 800; font-size: 1rem; color: var(--party-purple);">${currentStep + 1} / ${currentQuestions.length}</div>
+            </div>
         </div>
-        <div style="color: var(--party-purple); font-weight: 700; margin-bottom: 8px; font-size: 0.9rem; text-transform: uppercase;">
-            Вопрос ${currentStep + 1} из ${currentQuestions.length}
-        </div>
-        <div style="font-size: 1.3rem; font-weight: 800; line-height: 1.4;">
-            ${q.text}
+        
+        <div style="padding: 0 10px;">
+            <div style="font-size: 1.4rem; font-weight: 800; line-height: 1.3; color: #2d3436;">
+                ${q.text}
+            </div>
         </div>
     `;
     
+    // Код отрисовки кнопок/инпута ниже оставляем без изменений...
     if (q.type === 'options') {
         area.innerHTML = `
-            <div class="menu-grid" style="margin-top: 20px;">
-                ${q.options.map(o => `
-                    <button class="btn-answer" onclick="sendAnswer('${o}')">${o}</button>
-                `).join('')}
+            <div class="menu-grid" style="margin-top: 25px;">
+                ${q.options.map(o => `<button class="btn-answer" onclick="sendAnswer('${o}')">${o}</button>`).join('')}
             </div>
         `;
     } else {
         area.innerHTML = `
-            <div style="margin-top: 20px;">
-                <input type="text" id="ans-text" class="answer-input" placeholder="Твой ответ...">
+            <div style="margin-top: 25px;">
+                <input type="text" id="ans-text" class="answer-input" placeholder="Введите ответ...">
                 <button onclick="sendAnswer(document.getElementById('ans-text').value)" class="btn-party-direct">ОТПРАВИТЬ</button>
             </div>
         `;

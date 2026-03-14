@@ -9,7 +9,7 @@ class Quiz(Base):
     title = Column(String)
     code = Column(String, unique=True, index=True)
     questions_data = Column(JSON)
-    current_step = Column(Integer, default=0)
+    current_step = Column(Integer, default=-1)
     # Связь с игроками
     players = relationship("Player", back_populates="quiz", cascade="all, delete-orphan")
 

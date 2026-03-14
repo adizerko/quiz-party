@@ -113,6 +113,8 @@ async def handle_start(sid, data):
     try:
         quiz = db.query(models.Quiz).filter(models.Quiz.code == room).first()
         if quiz:
+            quiz.current_step = 0
+            db.commit()
             # ОТПРАВЛЯЕМ СПИСОК ИГРОКОВ, а не пустой объект
             players = get_players_in_quiz(db, quiz.id)
             await sio_manager.emit('game_started', players, room=room)
@@ -200,6 +202,37 @@ async def handle_next_question(sid, data):
 
     finally:
         db.close()
+
+
+@sio_manager.on('request_sync')
+async def handle_sync(sid, data):
+    room = data.get('room')
+    name = data.get('name')
+    db = next(database.get_db())
+    try:
+        quiz = db.query(models.Quiz).filter(models.Quiz.code == room).first()
+        player = db.query(models.Player).filter(
+            models.Player.quiz_id == quiz.id, 
+            models.Player.name == name
+        ).first()
+
+        if quiz:
+            # Сначала отправляем общее состояние
+            await sio_manager.emit('sync_state', {
+                "currentStep": quiz.current_step,
+                "isStarted": quiz.current_step >= 0, 
+                "playerAnswer": player.answers_history.get(str(quiz.current_step)) if player and player.answers_history else None,
+                "score": player.score if player else 0,
+                "emoji": player.emoji if player else "👤"
+            }, room=sid)
+            
+            # ВАЖНО: Если это хост, сразу шлем ему текущих игроков для сетки ответов
+            if player and player.is_host:
+                players_data = get_players_in_quiz(db, quiz.id)
+                await sio_manager.emit('update_answers', players_data, room=sid)
+    finally:
+        db.close()
+
 
 @sio_manager.on('move_to_step')
 async def handle_move_step(sid, data):

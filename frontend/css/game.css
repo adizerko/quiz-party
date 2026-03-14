@@ -316,11 +316,11 @@ body {
 }
 
 .answer-buttons {
-
     display: flex;
-    gap: 8px;
-
+    align-items: center;
+    margin-left: 10px;
 }
+
 
 .btn-score {
 
@@ -422,4 +422,173 @@ border:2px solid #e5e7eb;
     0% { box-shadow: 0 0 0 0 rgba(255, 133, 161, 0.7); }
     70% { box-shadow: 0 0 0 6px rgba(255, 133, 161, 0); }
     100% { box-shadow: 0 0 0 0 rgba(255, 133, 161, 0); }
+}
+
+.falling-cup {
+    font-size: 4rem;
+    display: block;
+    margin-bottom: 10px;
+    animation: dropIn 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes dropIn {
+    0% { transform: translateY(-100px) scale(0); opacity: 0; }
+    60% { transform: translateY(20px) scale(1.2); }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.winner-highlight {
+    background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%) !important;
+    border: 3px solid #ffcc00 !important;
+    box-shadow: 0 10px 25px rgba(255, 204, 0, 0.4) !important;
+    padding: 20px !important;
+    margin-bottom: 25px !important;
+}
+
+/* Элегантное оформление финала */
+.confetti-wrapper {
+    position: relative;
+    padding: 10px; /* Уменьшили отступы */
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,249,230,0.4) 100%);
+    margin-bottom: 20px;
+}
+
+/* Золотая аура для победителя — стильнее и компактнее */
+.winner-card-epic {
+    background: white !important;
+    border: 3px solid #FFD700 !important;
+    box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
+    position: relative;
+    z-index: 2;
+    /* Убрали постоянный Bounce, оставили только спокойное свечение */
+    animation: winnerGlow 2s infinite ease-in-out;
+    margin-bottom: 20px !important;
+}
+
+@keyframes winnerGlow {
+    0%, 100% { box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3); }
+    50% { box-shadow: 0 12px 35px rgba(255, 215, 0, 0.5); }
+}
+
+@keyframes shineName {
+    to { background-position: 200% center; }
+}
+
+/* Анимация короны при появлении */
+.crown-appear {
+    font-size: 2.5rem;
+    display: inline-block;
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.15));
+    animation: crownDrop 1s ease-out;
+}
+
+@keyframes crownDrop {
+    0% { transform: translateY(-50px) scale(0); opacity: 0; }
+    60% { transform: translateY(10px) scale(1.2); }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* Эффект сияния для имени победителя */
+.shiny-text-name {
+    background: linear-gradient(90deg, #b8860b, #daa520, #b8860b);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shineName 3s linear infinite;
+    font-weight: 800;
+}
+
+/* Эффект сияния текста */
+.shiny-text {
+    background: linear-gradient(90deg, #FFD700, #FFF5B7, #FFD700);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine 3s linear infinite;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+@keyframes winnerBounce {
+    0%, 100% { transform: scale(1.05) translateY(0); }
+    50% { transform: scale(1.07) translateY(-5px); }
+}
+
+@keyframes shine {
+    to { background-position: 200% center; }
+}
+
+.crown-float {
+    font-size: 3rem;
+    display: block;
+    filter: drop-shadow(0 5px 10px rgba(0,0,0,0.2));
+    animation: floating 2s infinite ease-in-out;
+}
+
+@keyframes floating {
+    0%, 100% { transform: translateY(0) rotate(-5deg); }
+    50% { transform: translateY(-15px) rotate(5deg); }
+}
+
+/* Контейнер для кнопок управления */
+.score-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Общий стиль кнопок-бабблов */
+/* Убедись, что эти значения такие, иначе кнопки будут огромными */
+.btn-control {
+    width: 36px;  /* Было 42, сделаем чуть компактнее */
+    height: 36px;
+    border-radius: 10px; /* Сделаем форму как у твоих карточек */
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+
+
+.btn-control:active {
+    transform: scale(0.9);
+}
+
+/* Кнопка "Принять" */
+.btn-accept {
+    background: #2ed573;
+    color: white;
+    box-shadow: 0 4px 15px rgba(46, 213, 115, 0.3);
+}
+
+.btn-accept:hover {
+    background: #26af5f;
+    box-shadow: 0 6px 20px rgba(46, 213, 115, 0.4);
+}
+
+/* Кнопка "Отклонить" */
+.btn-reject {
+    background: #ff4757;
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
+}
+
+.btn-reject:hover {
+    background: #e84118;
+    box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
+}
+
+/* Иконки внутри */
+.btn-control svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
