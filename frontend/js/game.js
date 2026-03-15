@@ -173,6 +173,7 @@ function renderScoreboard(players) {
 }
 
 function sendAnswer(val) {
+    // 1. Отправляем данные на сервер
     socket.emit('send_answer', { 
         room: roomCode, 
         name: playerName, 
@@ -180,12 +181,26 @@ function sendAnswer(val) {
         questionIndex: currentStep 
     });
     
-    document.getElementById('player-answer-area').innerHTML = `
-        <div class="empty-list-msg" style="margin-top:20px;">
-            <h3>Ответ отправлен! 🚀</h3>
-            <p>Ждем остальных...</p>
-        </div>
-    `;
+    // 2. Обновляем интерфейс (используем val вместо userAnswer)
+    const answerArea = document.getElementById('player-answer-area');
+    
+    if (answerArea) {
+        answerArea.innerHTML = `
+            <div class="sent-confirmation">
+                <div class="status-badge-sent">Отправлено 🚀</div>
+                
+                <div class="your-answer-preview">
+                    <div class="your-answer-label">Твой ответ:</div>
+                    <div class="your-answer-text">${val}</div>
+                </div>
+
+                <div class="waiting-loader">
+                    <div class="pulse-dot" style="display:inline-block; margin-right:8px;"></div>
+                    <span>Ждем остальных игроков...</span>
+                </div>
+            </div>
+        `;
+    }
 }
 
 socket.on('update_players', (players) => {
@@ -199,9 +214,19 @@ socket.on('update_players', (players) => {
             .map(p => {
                 const isMe = (role !== 'host' && p.name === playerName);
                 return `
-                    <div class="avatar-slot ${isMe ? 'it-is-me' : ''}">
-                        <div class="avatar-emoji">${p.emoji || '👤'}</div>
-                        <div class="avatar-name">${isMe ? 'Я' : p.name}</div>
+                    <div class="answer-card ${statusClass}">
+                        <div class="answer-info">
+                            <div class="answer-name">
+                                <span class="p-emoji">${p.emoji || '👤'}</span> 
+                                <span class="p-name">${p.name}</span>
+                            </div>
+                            <div class="player-answer-bubble">
+                                ${displayAnswer}
+                            </div>
+                        </div>
+                        <div class="answer-buttons">
+                            ${btnHTML}
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -269,7 +294,7 @@ socket.on("update_answers", (players) => {
 
         let statusClass = "waiting";
         let displayAnswer = "⏳ ожидает ответа...";
-        let btnHTML = "";
+        let btnHTML = ""; // Базовая переменная
 
         if (isAnswered) {
             displayAnswer = answerText;
@@ -278,32 +303,41 @@ socket.on("update_answers", (players) => {
 
             if (currentStatus === 1) {
                 statusClass = "correct";
-                btnHTML = `<div style="display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 0.6rem; font-weight: 800; color: #2ed573;">ВЕРНО</span>
-                                <button class="btn-control btn-reject" onclick="changeScore('${p.name}', -1)">
-                                    <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"></path></svg>
-                                </button>
-                           </div>`;
+                // Убрали 'const', чтобы менять внешнюю переменную
+                btnHTML = `
+                    <div class="card-controls">
+                        <span class="status-label">Верно</span>
+                        <button class="btn-mini btn-minus" onclick="changeScore('${p.name}', -1)" title="Забрать балл">
+                            <svg viewBox="0 0 24 24"><path d="M18 12H6" stroke="white" stroke-width="4" stroke-linecap="round"/></svg>
+                        </button>
+                    </div>`;
             } else {
                 statusClass = "wrong";
-                btnHTML = `<button class="btn-control btn-accept" onclick="changeScore('${p.name}', 1)">
-                                <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"></path></svg>
-                           </button>`;
+                // Тоже убрали 'const' и используем правильное имя переменной btnHTML
+                btnHTML = `
+                    <div class="card-controls">
+                        <button class="btn-mini btn-plus" onclick="changeScore('${p.name}', 1)" title="Засчитать балл">
+                            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="white" stroke-width="4" stroke-linecap="round"/></svg>
+                        </button>
+                    </div>`;
             }
         }
 
         return `
             <div class="answer-card ${statusClass}">
-                <div class="answer-info">
-                    <div class="answer-name" style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 1.8rem;">${p.emoji || '👤'}</span> 
-                        <span style="font-size: 1.1rem; font-weight: bold;">${p.name}</span>
+                <div class="card-header">
+                    <div class="player-info">
+                        <span class="p-emoji">${p.emoji || '👤'}</span> 
+                        <span class="p-name">${p.name}</span>
                     </div>
-                    <div style="font-size: 1.1rem; font-weight: 800; color: #2d3436; background: rgba(0,0,0,0.04); padding: 4px 10px; border-radius: 8px; display: inline-block; margin-top: 4px;">
-                        ${displayAnswer}
+                    <div class="card-controls">
+                        ${btnHTML}
                     </div>
                 </div>
-                <div class="answer-buttons">${btnHTML}</div>
+                
+                <div class="player-answer-bubble">
+                    ${displayAnswer}
+                </div>
             </div>
         `;
     }).join("");
@@ -516,7 +550,7 @@ function renderPlayerQuestion() {
     } else {
         area.innerHTML = `
             <div style="margin-top: 25px;">
-                <input type="text" id="ans-text" class="answer-input" placeholder="Введите ответ...">
+                <input type="text" id="ans-text" class="answer-input" maxlength="50" placeholder="Введите ответ...">
                 <button onclick="sendAnswer(document.getElementById('ans-text').value)" class="btn-party-direct">ОТПРАВИТЬ</button>
             </div>
         `;

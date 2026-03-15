@@ -68,7 +68,7 @@ def get_quiz(code: str, db: Session = Depends(database.get_db)):
 @sio_manager.on('join_room')
 async def handle_join(sid, data):
     room = data.get('room')
-    name = data.get('name')
+    name = str(data.get('name', 'Игрок'))[:15]
     role = data.get('role')
     is_host = (role == 'host')
     
@@ -123,10 +123,10 @@ async def handle_start(sid, data):
 
 @sio_manager.on('send_answer')
 async def handle_answer(sid, data):
-
     room = data.get('room')
     name = data.get('name')
-    answer = data.get('answer')
+    raw_answer = data.get('answer', '')
+    answer = str(raw_answer)[:50] if raw_answer else ""
     q_idx = str(data.get('questionIndex'))
 
     db = next(database.get_db())

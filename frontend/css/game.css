@@ -23,8 +23,9 @@ body {
 }
 
 .main-container {
-    width: 100%;
-    max-width: 500px;
+    width: 95%;            /* Занимает почти всю ширину на маленьких экранах */
+    max-width: 850px;      /* Существенно расширяем для десктопа/планшетов */
+    margin: 20px auto;     /* Центрируем контейнер */
     margin-top: 40px;
 }
 
@@ -175,13 +176,17 @@ body {
     box-shadow: 0 0 10px rgba(99,102,241,0.6);
 }
 
+/* Пройденные этапы */
 .q-step.done {
-    background: #22c55e;
-    color: white;
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    box-shadow: 0 2px 6px rgba(46, 204, 113, 0.3);
 }
 
+/* Будущие этапы */
 .q-step.future {
-    background: #e5e7eb;
+    background: rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    color: #95a5a6;
 }
 
 .pulse-dot {
@@ -220,28 +225,27 @@ body {
     font-weight:700;
 }
 
-/* --- КАРТОЧКИ ОТВЕТОВ --- */
-.answer-card {
-    background: white;
-    border-radius: 16px;
-    padding: 14px;
-    margin-bottom: 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-}
-
-.answer-card.correct { background:#ecfdf5; border:2px solid #10b981; }
-.answer-card.wrong { background:#fef2f2; border:2px solid #ef4444; }
+.answer-card.correct { background:#ecfdf5; border:2px solid #10b981; border-left: 5px solid #2ed573; background: rgba(46, 213, 115, 0.1);}
+.answer-card.wrong { background:#fef2f2; border:2px solid #ef4444; border-left: 5px solid #ff4757; background: rgba(255, 71, 87, 0.1);}
 .answer-card.waiting { background:#f9fafb; border:2px solid #e5e7eb; }
 
 .answer-info {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
+    align-items: flex-start; /* Прижимает содержимое к началу (влево) */
+    text-align: left;        /* Гарантирует выравнивание текста по левому краю */
 }
 
-.answer-name { font-weight: 700; }
+/* Блок с именем и эмодзи */
+.answer-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    justify-content: flex-start; /* Имя тоже всегда слева */
+}
 .answer-text { font-size: 14px; opacity: .7; }
 
 .answer-buttons {
@@ -252,15 +256,16 @@ body {
 
 /* --- КНОПКИ УПРАВЛЕНИЯ БАЛЛАМИ (ГАЛОЧКА/КРЕСТИК) --- */
 .btn-control {
-    width: 36px; 
-    height: 36px;
-    border-radius: 10px; 
+    width: 42px;
+    height: 42px;
+    border-radius: 12px; /* Мягкий квадрат смотрится современнее круга */
     border: none;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .btn-control:active { transform: scale(0.9); }
@@ -285,10 +290,66 @@ body {
     width: 20px;
     height: 20px;
     fill: none;
-    stroke: currentColor;
-    stroke-width: 3;
+    stroke: white;
+    stroke-width: 3.5;
     stroke-linecap: round;
     stroke-linejoin: round;
+}
+
+/* Кнопка ПРИНЯТЬ (Зеленая) */
+.btn-action-accept {
+    background: linear-gradient(135deg, #2ed573, #7bed9f);
+    box-shadow: 0 4px 15px rgba(46, 213, 115, 0.3);
+}
+
+.btn-action-accept:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(46, 213, 115, 0.4);
+}
+
+/* Кнопка ОТМЕНИТЬ (Красная) */
+.btn-action-reject {
+    background: linear-gradient(135deg, #ff4757, #ff6b81);
+    box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
+}
+
+.btn-action-reject:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
+}
+
+/* Красивый бейдж статуса (вместо текста ВЕРНО) */
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 0.65rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.status-correct {
+    background: rgba(46, 213, 115, 0.15);
+    color: #2ed573;
+    border: 1px solid rgba(46, 213, 115, 0.3);
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    background: #2ed573;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #2ed573;
+    animation: pulse-dot 1.5s infinite;
+}
+
+@keyframes pulse-dot {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
 }
 
 /* --- МОДАЛЬНЫЙ АЛЕРТ --- */
@@ -433,18 +494,94 @@ body::after {
     box-shadow: 0 12px 25px rgba(108,92,231,0.4);
 }
 
-/* --- КАРТОЧКИ ОТВЕТОВ (Компактные) --- */
+/* Основная карточка */
 .answer-card {
-    background: white;
-    border-radius: 14px;
-    padding: 12px 10px;
-    margin-bottom: 8px;
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    padding: 16px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border: 1px solid rgba(0,0,0,0.08);
+    position: relative;
+    overflow: hidden; /* Чтобы ничего не вылетало за границы */
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Верхняя часть: Имя слева, Кнопки справа */
+.card-header {
+    display: flex;
+    justify-content: space-between; 
     align-items: center;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    width: 100%;
+    margin-bottom: 10px;
+    gap: 10px;
+}
+
+/* Контейнер для имени */
+.player-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0; /* Важно для обрезки длинных имен */
+}
+
+.card-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #2ed573;
+    letter-spacing: 0.5px;
+}
+
+/* Стиль мини-кнопок */
+.btn-mini {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-mini svg {
+    width: 14px;
+    height: 14px;
+}
+
+.btn-plus {
+    background: #2ed573; /* Зеленый */
+    box-shadow: 0 2px 8px rgba(46, 213, 115, 0.4);
+}
+
+.btn-minus {
+    background: #ff4757; /* Красный */
+    box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4);
+}
+
+.btn-mini:hover {
+    transform: translateY(-2px) scale(1.1);
+}
+
+.btn-mini:active {
+    transform: translateY(0) scale(0.95);
+}
+
+.answer-main {
+    min-width: 0; /* Обязательно! Позволяет тексту внутри переноситься, а не распирать грид */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
 .answer-card.correct { background:#d4f2e4; border:2px solid #10b981; }
@@ -789,11 +926,14 @@ body::after {
 
 /* Адаптив для мобильных экранов */
 @media (max-width: 480px) {
-    #player-wait .party-title {
-        font-size: 1.4rem; /* Уменьшаем заголовок на телефонах */
+    .answer-card {
+        grid-template-columns: 1fr 50px; /* На мобилках под кнопку чуть меньше места */
+        padding: 8px;
     }
-    #player-wait .party-subtitle {
-        font-size: 0.65rem; /* Чуть меньше подзаголовок */
+    
+    .player-answer-bubble {
+        font-size: 0.95rem;
+        padding: 8px 10px;
     }
 }
 
@@ -863,16 +1003,386 @@ body::after {
     100% { transform: scale(1); }
 }
 
-.avatar-slot {
-    position: relative;
+/* Пузырь с ответом */
+.player-answer-bubble {
+    width: 100%; /* Занимает всю доступную ширину карточки */
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.03); 
+    border-radius: 14px;
+    
+    /* Текст */
+    font-weight: 800;
+    font-size: 1rem;
+    text-align: left; /* Текст слева */
+    color: #2d3436;
+    line-height: 1.4;
+
+    /* ПЕРЕНОСЫ — самое важное */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word; /* Силовой перенос длинных строк без пробелов */
+    box-sizing: border-box;
 }
 
-.click-particle {
-    position: absolute;
-    width: 6px;
-    height: 6px;
-    background: var(--party-pink);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 10;
+/* Эффект, когда ответ помечен как верный */
+.answer-card.correct .player-answer-bubble {
+    background: linear-gradient(135deg, #e1fdec 0%, #c1f9d8 100%);
+    color: #1b8a4d;
+    border-color: rgba(46, 213, 115, 0.2);
+}
+
+#players-answers-grid {
+    display: grid;
+    /* На телефонах — 1 колонка, на экранах шире 700px — 2 колонки */
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
+    gap: 15px;
+    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Эффект, когда ответ помечен как неверный */
+.answer-card.wrong .player-answer-bubble {
+    background: linear-gradient(135deg, #fff0f0 0%, #ffe0e0 100%);
+    color: #b33939;
+    border-color: rgba(255, 71, 87, 0.2);
+}
+
+/* Для тех, кто еще ждет */
+.answer-card.waiting .player-answer-bubble {
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px dashed rgba(0, 0, 0, 0.1);
+    color: #b2bec3;
+    font-weight: 500;
+    font-style: italic;
+}
+
+.answer-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 70px; /* Увеличили зону, чтобы ничего не наплывало */
+}
+
+.p-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Если имя супер-длинное, оно не сломает верстку */
+}
+
+/* Мобильная оптимизация */
+@media (max-width: 580px) {
+    .player-answer-bubble {
+        font-size: 0.7rem;
+        line-height: 1.2;
+        background: #f1f9fb;
+        border-radius: 12;
+    }
+    .answer-card {
+        padding: 8px 10px;
+        gap: 8px;
+    }
+}
+
+.answer-content-wrapper {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    /* Добавляем отступ справа, чтобы текст не касался кнопок */
+    padding-right: 10px; 
+}
+
+.answer-name-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+}
+
+@media (max-width: 480px) {
+    /* Уменьшаем отступы в контейнере */
+    #players-answers-grid {
+        gap: 5px; /* Карточки будут стоять ближе друг к другу */
+        padding: 8px;
+    }
+
+    .answer-card {
+        padding: 5px 12px; /* Было 16px — уменьшили высоту */
+    }
+
+    .card-header {
+        margin-bottom: 1px; /* Прижали имя к пузырю ответа */
+    }
+
+    .p-name {
+        font-size: 0.65rem; /* Имя чуть меньше */
+    }
+
+    .avatar-emoji {
+        font-size: 1.5rem; /* Эмодзи компактнее */
+    }
+
+    /* Уменьшаем высоту пузыря с ответом */
+    .player-answer-bubble {
+        padding: 8px 12px; /* Меньше внутреннего пространства */
+        margin-top: 4px;   /* Меньше расстояние от заголовка */
+        font-size: 0.65rem; /* Шрифт чуть меньше, чтобы длинный текст влезал */
+        line-height: 1.25;  /* Плотнее межстрочный интервал */
+    }
+
+    /* Кнопки тоже делаем чуть меньше, чтобы они не раздували высоту */
+    .btn-mini {
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
+    }
+}
+
+@media (max-width: 480px) {
+    #scoreboard {
+        padding: 5px; /* Уменьшаем внутренний отступ контейнера */
+        margin-bottom: 10px;
+        background: rgba(248, 238, 250, 0.5); /* Делаем чуть прозрачнее */
+    }
+
+    .score-row {
+        padding: 2px 5px; /* Было 12px — теперь строки тоньше */
+        font-size: 0.85rem; /* Шрифт компактнее */
+        margin-bottom: 4px; /* Расстояние между строками */
+        border-radius: 10px;
+    }
+
+    .leader-row {
+        padding: 2px 5px; /* Лидеры чуть заметнее остальных */
+        font-size: 0.9rem;
+    }
+
+    /* Уменьшаем размер иконок, чтобы они не раздували строку */
+    .score-row span:last-child {
+        font-size: 0.8rem;
+        opacity: 0.9;
+    }
+}
+
+/* Красивый стиль для текста вопроса */
+#host-question-text {
+    font-size: 1.8rem;
+    font-weight: 800;
+    text-align: center;
+    background: linear-gradient(135deg, #2d3436 0%, #6c5ce7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+    letter-spacing: -0.5px;
+    animation: fadeInDown 0.6s ease-out;
+}
+
+/* Плашка с правильным ответом */
+#correct-answer {
+    display: inline-block;
+    padding: 6px 16px;
+    background: rgba(108, 92, 231, 0.1);
+    border-radius: 12px;
+    border: 1px dashed rgba(108, 92, 231, 0.3);
+    font-size: 1rem;
+    color: #6c5ce7;
+    margin-bottom: 20px;
+    animation: fadeInUp 0.8s ease-out;
+}
+
+/* --- МОБИЛЬНАЯ АДАПТАЦИЯ --- */
+@media (max-width: 480px) {
+    #host-question-text {
+        font-size: 1.2rem !important; /* Уменьшаем заголовок на мобилках */
+        margin-bottom: 8px;
+        padding: 0 10px;
+    }
+
+    #correct-answer {
+        font-size: 0.85rem !important; /* Делаем ответ компактнее */
+        padding: 4px 12px;
+        margin-bottom: 15px;
+    }
+}
+
+/* Анимации появления */
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 480px) {
+    /* Контейнер прогресса */
+    #questions-progress {
+        gap: 4px; /* Уменьшаем расстояние между шагами */
+        margin-bottom: 10px;
+    }
+
+    /* Обертка шага */
+    .q-step-wrapper {
+        margin: 0 2px !important; /* Уменьшаем боковые отступы */
+    }
+
+    /* Сам кружок/квадрат шага */
+    .q-step {
+        width: 26px !important;  /* Было 32px */
+        height: 26px !important; /* Было 32px */
+        font-size: 0.75rem;      /* Шрифт цифр чуть меньше */
+        border-radius: 6px;      /* Пропорционально скругляем углы */
+    }
+
+    /* Активный шаг */
+    .q-step.active {
+        transform: scale(1.1); /* На мобилке не делаем слишком большой зум */
+    }
+
+    /* Точка под активным шагом (пульсация) */
+    .pulse-dot {
+        width: 6px !important;
+        height: 6px !important;
+        margin-top: 2px !important;
+    }
+
+    /* Заглушка под шагом без точки */
+    .q-step-wrapper div[style*="height: 12px"] {
+        height: 8px !important; /* Уменьшаем пустое пространство */
+    }
+}
+
+.player-question-container {
+    background: var(--party-glass);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 20px;
+    margin: 10px 0 20px 0;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 8px 32px rgba(108, 92, 231, 0.1);
+    text-align: center;
+}
+
+.player-question-text {
+    font-size: 1.4rem;
+    font-weight: 800;
+    line-height: 1.3;
+    color: #2d3436;
+    background: linear-gradient(135deg, #2d3436 0%, #6c5ce7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Мобильная версия заголовка */
+@media (max-width: 480px) {
+    .player-question-container {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    .player-question-text {
+        font-size: 1.1rem;
+    }
+}
+
+.sent-confirmation {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.status-badge-sent {
+    display: inline-block;
+    padding: 5px 15px;
+    background: #2ecc71;
+    color: white;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);
+}
+
+.your-answer-preview {
+    background: rgba(108, 92, 231, 0.05);
+    border: 2px dashed #6c5ce7;
+    border-radius: 15px;
+    padding: 15px;
+    margin: 20px 0;
+}
+
+.your-answer-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: #6c5ce7;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+
+.your-answer-text {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #2d3436;
+}
+
+.waiting-loader {
+    font-size: 0.9rem;
+    color: #636e72;
+    font-style: italic;
+}
+
+@media (max-width: 480px) {
+    .your-answer-text {
+        font-size: 1rem;
+    }
+    .your-answer-preview {
+        padding: 12px;
+    }
+}
+
+/* Контейнер для вопроса */
+.question-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 20px;
+    padding: 24px 15px;
+    margin: 10px 10px 20px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 10px 30px rgba(108, 92, 231, 0.08);
+    text-align: center;
+    animation: slideUp 0.5s ease-out;
+}
+
+/* Текст самого вопроса */
+.question-title {
+    font-size: 1.6rem;
+    font-weight: 900;
+    line-height: 1.2;
+    background: linear-gradient(135deg, #2d3436 0%, #6c5ce7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+}
+
+/* Компактность для мобилок */
+@media (max-width: 480px) {
+    .question-card {
+        padding: 16px 12px;
+        margin: 5px 5px 15px 5px;
+    }
+    .question-title {
+        font-size: 1.3rem; /* Чуть меньше на телефонах */
+    }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }

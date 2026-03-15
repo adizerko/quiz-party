@@ -57,18 +57,11 @@
             </button>
 
         </div>
-
-
         <div id="host-game-area" style="display:none;">
-
             <div id="questions-progress"></div>
-
             <div id="scoreboard"></div>
-
             <h1 id="host-question-text" class="party-title" style="font-size:1.5rem;margin-bottom:20px;"></h1>
-
             <div id="correct-answer" style="margin-bottom:15px;font-weight:600;color:#6c5ce7;"></div>
-
             <div id="players-answers-grid" class="party-scroll-list"></div>
 
             <div style="display:flex;gap:10px;margin-top:25px;">
@@ -79,90 +72,61 @@
                     ДАЛЬШЕ ➡️
                 </button>
             </div>
-
         </div>
-
     </div>
-
 
     <!-- PLAYER -->
     <div id="player-screen" class="party-card" style="display:none;">
-
         <!-- название -->
         <div class="quiz-header">
             <div class="quiz-sub">QUIZ PARTY</div>
             <div id="quiz-title-player" class="quiz-title"></div>
         </div>
-
         <div id="player-wait">
             <span class="emoji-logo">🎈</span>
             <h1 class="party-title">ТЫ В ИГРЕ!</h1>
             <p class="party-subtitle">
                 Ждем, пока организатор начнет раунд...
             </p>
-            
             <div class="players-party-container host-variant">
                 <span class="mini-label">В КОМНАТЕ</span>
                 <div id="player-lobby-list" class="party-avatars-grid"></div>
             </div>
         </div>
-
-
         <div id="player-game-area" style="display:none;">
-
             <h1 id="player-question-text" class="party-title" style="font-size:1.4rem;"></h1>
-
             <div id="player-answer-area"></div>
-
         </div>
-
     </div>
-
 
     <!-- FINISH -->
     <div id="finish-screen" class="party-card" style="display:none;">
-
         <div id="final-results-list" class="list-zone"></div>
-
         <button onclick="location.href='index.html'"
                 class="btn-party-direct"
                 style="margin-top:20px">
             В ГЛАВНОЕ МЕНЮ
         </button>
-
     </div>
-
 </div>
 
 
-
-<!-- CONFIRM -->
 <div id="confirm-overlay" class="modern-confirm-overlay" style="display:none;">
-
     <div class="party-card modern-confirm-box">
-
         <h2 style="color:var(--party-purple)">Стоп-стоп ✋</h2>
-
         <p>Некоторые игроки ещё думают. Всё равно переключаем вопрос?</p>
-
         <div style="display:flex;gap:10px;">
-
             <button onclick="document.getElementById('confirm-overlay').style.display='none'"
                     class="btn-party-main"
                     style="background:#b2bec3">
                 НЕТ
             </button>
-
             <button id="confirm-proceed-btn" class="btn-party-main">
                 ДА, ДАЛЬШЕ
             </button>
-
         </div>
-
     </div>
-
 </div>
-
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script src="js/game.js"></script>
