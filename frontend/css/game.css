@@ -663,30 +663,6 @@ body::after {
     filter: drop-shadow(0 0 15px rgba(108, 92, 231, 0.5));
 }
 
-.players-party-container {
-    background: white;
-    border-radius: 25px;
-    padding: 20px 15px;
-    margin-top: 20px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-}
-
-.party-avatars-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    justify-content: center;
-    margin-top: 10px;
-}
-
-.avatar-slot {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 80px;
-    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
 .avatar-emoji {
     font-size: 2.2rem;
     margin-bottom: 5px;
@@ -714,19 +690,22 @@ body::after {
 }
 
 .players-party-container {
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(219, 247, 248, 0.5);
     border-radius: 20px;
     padding: 15px;
-    margin-top: 20px;
+    margin: 20px 0; /* Убираем авто-отступы по бокам, если они были */
+    width: 100%;    /* Растягиваем на всю ширину карточки */
+    box-sizing: border-box; /* Чтобы padding не раздувал ширину */
 }
+
 .host-variant {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(223, 252, 252, 0.3);
     border: 2px dashed rgba(108, 92, 231, 0.3);
 }
 .party-avatars-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 15px;
+    gap: 10px;
     justify-content: center;
     margin-top: 10px;
 }
@@ -763,4 +742,58 @@ body::after {
     letter-spacing: 4px !important;
     font-weight: 800 !important;
     margin-bottom: 5px;
+}
+
+/* --- ОЖИВЛЯЕМ ЭКРАН ИГРОКА --- */
+
+/* Основной заголовок "ТЫ В ИГРЕ!" */
+#player-wait .party-title {
+    font-size: 1.8rem; /* Крупный, заметный размер */
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    
+    /* 1. Градиент текста (как на кнопках) */
+    background: linear-gradient(135deg, #ff85a1 0%, #6c5ce7 100%);
+    -webkit-background-clip: text; /* Магия: текст становится маской для градиента */
+    -webkit-text-fill-color: transparent; /* Делаем сам текст прозрачным */
+    
+    /* 2. Мягкое неоновое свечение (тень текста) */
+    text-shadow: 0 4px 15px rgba(108, 92, 231, 0.4);
+    
+    /* 3. Анимация: легкое пульсирование */
+    animation: titlePulse 2.5s ease-in-out infinite;
+}
+
+/* Подзаголовок "Ждем, пока организатор..." */
+#player-wait .party-subtitle {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #2d3436;
+    opacity: 0.8; /* Чуть приглушим, чтобы не спорил с заголовком */
+    max-width: 320px; /* Чтобы текст красиво разбивался на строки */
+    margin: 0 auto 30px auto; /* Центрируем и добавляем отступ снизу */
+}
+
+/* Ключевые кадры для анимации пульсации заголовка */
+@keyframes titlePulse {
+    0%, 100% {
+        transform: scale(1);
+        text-shadow: 0 4px 15px rgba(108, 92, 231, 0.4);
+    }
+    50% {
+        transform: scale(1.03); /* Чуть увеличивается */
+        text-shadow: 0 4px 25px rgba(255, 133, 161, 0.6); /* Свечение становится ярче и розовее */
+    }
+}
+
+/* Адаптив для мобильных экранов */
+@media (max-width: 480px) {
+    #player-wait .party-title {
+        font-size: 1.4rem; /* Уменьшаем заголовок на телефонах */
+    }
+    #player-wait .party-subtitle {
+        font-size: 0.65rem; /* Чуть меньше подзаголовок */
+    }
 }
