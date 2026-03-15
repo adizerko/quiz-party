@@ -1539,3 +1539,14 @@ body::after {
         height: 30px;
     }
 }
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+.shake-anim {
+    animation: shake 0.2s ease-in-out 0s 2;
+    border-color: #ff7675 !important; /* На миг станет красноватым */
+}

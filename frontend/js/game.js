@@ -413,7 +413,21 @@ socket.on("answers_check_result", (data) => {
 socket.on('sync_state', (data) => {
     currentStep = data.currentStep;
     realGameStep = data.currentStep;
+
+    if (data.maxReachedStep !== undefined) {
+        maxReachedStep = data.maxReachedStep;
+    }
+
     if (data.emoji) myEmoji = data.emoji;
+
+    if (data.isFinished) {
+        document.getElementById('host-screen').style.display = 'none';
+        document.getElementById('player-screen').style.display = 'none';
+        document.getElementById('finish-screen').style.display = 'block';
+        return; // Дальше логику синхронизации обычного шага не гоним
+    }
+
+
 
     if (role !== 'host') {
         const waitEmoji = document.getElementById('player-wait-emoji');
@@ -439,12 +453,24 @@ socket.on('sync_state', (data) => {
             renderPlayerQuestion();
             
             if (data.playerAnswer) {
-                document.getElementById('player-answer-area').innerHTML = `
-                    <div class="empty-list-msg" style="margin-top:20px;">
-                        <h3>Ответ уже отправлен! 🚀</h3>
-                        <p>Вы ответили: <b>${data.playerAnswer}</b></p>
-                    </div>
-                `;
+                const answerArea = document.getElementById('player-answer-area');
+                if (answerArea) {
+                    answerArea.innerHTML = `
+                        <div class="sent-confirmation reveal-anim">
+                            <div class="status-badge-sent">Отправлено 🚀</div>
+                            
+                            <div class="your-answer-preview">
+                                <div class="your-answer-label">Твой ответ:</div>
+                                <div class="your-answer-text">${data.playerAnswer}</div>
+                            </div>
+
+                            <div class="waiting-loader">
+                                <div class="pulse-dot" style="display:inline-block; margin-right:8px;"></div>
+                                <span>Ждем остальных игроков...</span>
+                            </div>
+                        </div>
+                    `;
+                }
             }
         }
     }
@@ -455,27 +481,18 @@ function refreshUI() {
     if (role === 'host') {
         updateHostUI();
         socket.emit("get_update", roomCode); 
-        
         const btn = document.getElementById('next-btn');
         if (btn) {
-
             if (currentStep !== realGameStep) {
-
                 btn.innerText = "↩ Вернуться к текущему вопросу";
                 btn.onclick = () => {
                     currentStep = realGameStep;
-
-                    // обновляем UI
                     refreshUI();
-
-                    // запрашиваем актуальные ответы игроков
                     socket.emit("get_update", roomCode);
                 };
 
             } else {
-
                 btn.onclick = nextQuestion;
-
                 btn.innerText =
                     (currentStep === currentQuestions.length - 1)
                     ? "🏆 ПОДВЕСТИ ИТОГИ"
@@ -491,11 +508,10 @@ function refreshUI() {
 function updateHostUI() {
     const q = currentQuestions[currentStep];
     const isLastQuestion = currentStep === currentQuestions.length - 1;
-
     document.getElementById("host-question-text").innerText = `${currentStep + 1}. ${q.text}`;
     document.getElementById("correct-answer").innerText = "Правильный ответ: " + q.correct;
-
     const nextBtn = document.getElementById('next-btn');
+
     if (nextBtn) {
         if (isLastQuestion) {
             nextBtn.innerText = "🏆 ПОДВЕСТИ ИТОГИ";
@@ -513,7 +529,6 @@ function renderPlayerQuestion() {
     const title = document.getElementById('player-question-text');
     if (!q) return;
 
-    // 1. Только структура заголовка
     title.innerHTML = `
         <div class="player-header">
             <div class="player-info-badge">
@@ -524,14 +539,12 @@ function renderPlayerQuestion() {
                 ${currentStep + 1} <span style="opacity: 0.3;">/ ${currentQuestions.length}</span>
             </div>
         </div>
-        
         <div class="question-container reveal-anim">
             <div class="question-main-text">${q.text}</div>
             <div class="question-line"></div>
         </div>
     `;
     
-    // 2. Только структура контента
     if (q.type === 'options') {
         area.innerHTML = `
             <div class="answers-grid reveal-anim">
@@ -545,9 +558,9 @@ function renderPlayerQuestion() {
     } else {
         area.innerHTML = `
             <div class="input-group-container reveal-anim">
-                <div class="input-wrapper">
+                <div class="input-wrapper" id="input-box">
                     <input type="text" id="ans-text" class="answer-input-field" maxlength="50" placeholder="Ответ...">
-                    <button class="btn-send-arrow" onclick="sendAnswer(document.getElementById('ans-text').value)">
+                    <button class="btn-send-arrow" onclick="validateAndSend()">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                             <polyline points="12 5 19 12 12 19"></polyline>
@@ -557,6 +570,21 @@ function renderPlayerQuestion() {
             </div>
         `;
     }
+}
+
+// Новая функция-прослойка для проверки
+function validateAndSend() {
+    const input = document.getElementById('ans-text');
+    const val = input.value.trim();
+    
+    if (val === "") {
+        const box = document.getElementById('input-box');
+        box.classList.add('shake-anim');
+        setTimeout(() => box.classList.remove('shake-anim'), 500);
+        if (window.navigator.vibrate) window.navigator.vibrate(50);
+        return;
+    }
+    sendAnswer(val);
 }
 
 window.onload = init;
