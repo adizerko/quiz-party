@@ -1,5 +1,6 @@
 const socket = io();
 
+let quizTitle = "";
 let myEmoji = '👤';
 let currentStep = 0;
 let realGameStep = 0;
@@ -16,11 +17,33 @@ async function init() {
         document.getElementById('display-room-code').innerText = roomCode;
     }
 
+    const toy = document.getElementById('lobby-clicker-toy');
+    if (toy) {
+        toy.onclick = () => {
+            // 1. Список праздничных эмодзи
+            const emojis = ['🎈', '🎉', '🎊', '✨', '🎁', '🦄', '⭐'];
+            toy.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+
+            // 2. Перезапуск анимации
+            toy.classList.remove('pop-animation');
+            void toy.offsetWidth; // Магия JS для принудительного рендеринга (reflow)
+            toy.classList.add('pop-animation');
+
+            // 3. Можно добавить легкую вибрацию на телефоне, если доступно
+            if (navigator.vibrate) {
+                navigator.vibrate(10); 
+            }
+        };
+    }
+
     try {
         const response = await fetch(`/api/quizzes/${roomCode}`);
         if (response.ok) {
             const data = await response.json();
+            quizTitle = data.title;
             currentQuestions = data.questions_data;
+
+            renderQuizTitle();
             renderProgress();
             
             socket.emit('join_room', { 
@@ -48,6 +71,32 @@ function startGame() {
     currentStep = 0;
     socket.emit('start_game_signal', { room: roomCode });
 }
+
+function renderQuizTitle() {
+    const hostTitle = document.getElementById("quiz-title-host");
+    const playerTitle = document.getElementById("quiz-title-player");
+
+    if (hostTitle) hostTitle.innerText = quizTitle;
+    if (playerTitle) playerTitle.innerText = quizTitle;
+}
+
+const displayRoomCode = document.getElementById('display-room-code');
+const copyRoomBtn = document.getElementById('copy-room-btn');
+const copyMsg = document.getElementById('copy-msg');
+
+function copyRoomCode() {
+    const code = displayRoomCode.textContent;
+    navigator.clipboard.writeText(code).then(() => {
+        copyMsg.classList.add('show');
+        setTimeout(() => copyMsg.classList.remove('show'), 1500);
+    });
+}
+
+// Копирование при клике на кнопку
+copyRoomBtn.addEventListener('click', copyRoomCode);
+
+// Можно также копировать при клике на сам код
+displayRoomCode.addEventListener('click', copyRoomCode);
 
 function nextQuestion() {
 
@@ -158,14 +207,34 @@ function sendAnswer(val) {
 }
 
 socket.on('update_players', (players) => {
-    const list = document.getElementById('lobby-players-list');
-    if (list && role === 'host') {
-        list.innerHTML = players.filter(p => !p.is_host).map(p => `
-            <div class="player-row-lobby">
-                <span class="player-emoji-icon">${p.emoji || '👤'}</span>
-                <span class="player-name-lobby">${p.name}</span>
-            </div>
-        `).join('');
+    // Оставляем логику для Хоста (она у тебя в другом блоке)
+    if (role === 'host') {
+        const hostList = document.getElementById('lobby-players-list');
+        if (hostList) {
+            hostList.innerHTML = players.filter(p => !p.is_host).map(p => `
+                <div class="player-row-lobby">
+                    <span class="player-emoji-icon">${p.emoji || '👤'}</span>
+                    <span class="player-name-lobby">${p.name}</span>
+                </div>
+            `).join('');
+        }
+        return;
+    }
+
+    // ЛОГИКА ДЛЯ ИГРОКА: рисуем всех в одну сетку
+    const playerList = document.getElementById('player-lobby-list');
+    if (playerList) {
+        playerList.innerHTML = players
+            .filter(p => !p.is_host)
+            .map(p => {
+                const isMe = p.name === playerName;
+                return `
+                    <div class="avatar-slot ${isMe ? 'it-is-me' : ''}">
+                        <div class="avatar-emoji">${p.emoji || '👤'}</div>
+                        <div class="avatar-name">${isMe ? 'Я' : p.name}</div>
+                    </div>
+                `;
+            }).join('');
     }
 });
 
@@ -343,6 +412,13 @@ socket.on('sync_state', (data) => {
     currentStep = data.currentStep;
     realGameStep = data.currentStep;
     if (data.emoji) myEmoji = data.emoji;
+
+    if (role !== 'host') {
+        const waitEmoji = document.getElementById('player-wait-emoji');
+        const waitName = document.getElementById('player-wait-name');
+        if (waitEmoji) waitEmoji.innerText = data.emoji || myEmoji;
+        if (waitName) waitName.innerText = playerName;
+    }
 
     if (role === 'host') {
         if (currentStep >= 0) {

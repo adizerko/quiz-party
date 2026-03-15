@@ -4,72 +4,176 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quiz Party - Battle Royale</title>
+
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/game.css">
 </head>
-<body class="party-bg">
-    <div class="balloon balloon-1"></div>
-    <div class="balloon balloon-2"></div>
-    <div class="balloon balloon-3"></div>
 
-    <div class="main-container">
-        
-        <div id="host-screen" class="party-card" style="display: none;">
-            <div id="host-lobby">
-                <span class="emoji-logo">🎉</span>
-                <h1 class="party-title">ЖДЕМ ГОСТЕЙ</h1>
-                <p class="party-subtitle">Код комнаты: <span id="display-room-code" style="color: var(--party-purple); font-weight: 800;"></span></p>
-                <div id="lobby-players-list" class="party-scroll-list"></div>
-                <button onclick="startGame()" class="btn-party-direct" style="margin-top: 20px;">ПОГНАЛИ! 🚀</button>
+<body class="party-bg">
+
+<div class="balloon balloon-1"></div>
+<div class="balloon balloon-2"></div>
+<div class="balloon balloon-3"></div>
+
+<div class="main-container">
+
+    <!-- HOST -->
+    <div id="host-screen" class="party-card" style="display:none;">
+
+        <!-- название -->
+        <div class="quiz-header">
+            <div class="quiz-sub">QUIZ PARTY</div>
+            <div id="quiz-title-host" class="quiz-title"></div>
+        </div>
+
+        <div id="host-lobby">
+
+            <h1 class="party-title shiny-waiting">
+            🎈 Ждём гостей 🎉
+            </h1>
+
+            <p class="party-subtitle">
+                Код комнаты:
+                <span class="room-code-wrapper">
+                    <span id="display-room-code" style="color: var(--party-purple); font-weight: 800;">123456</span>
+                    <button id="copy-room-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                    </button>
+                </span>
+            </p>
+            <p id="copy-msg" class="copy-msg">Скопировано!</p>
+
+            <div id="lobby-players-list" class="party-scroll-list"></div>
+
+            <button onclick="startGame()" class="btn-party-direct" style="margin-top:20px;">
+                ПОГНАЛИ 🚀
+            </button>
+
+        </div>
+
+
+        <div id="host-game-area" style="display:none;">
+
+            <div id="questions-progress"></div>
+
+            <div id="scoreboard"></div>
+
+            <h1 id="host-question-text" class="party-title" style="font-size:1.5rem;margin-bottom:20px;"></h1>
+
+            <div id="correct-answer" style="margin-bottom:15px;font-weight:600;color:#6c5ce7;"></div>
+
+            <div id="players-answers-grid" class="party-scroll-list"></div>
+
+            <div style="display:flex;gap:10px;margin-top:25px;">
+                <button id="next-btn"
+                        onclick="nextQuestion()"
+                        class="btn-party-main"
+                        style="background:var(--party-purple);flex:2;">
+                    ДАЛЬШЕ ➡️
+                </button>
             </div>
 
-            <div id="host-game-area" style="display: none;">
-                <div id="questions-progress"></div>
+        </div>
 
-                <div id="scoreboard"></div>
-                <h1 id="host-question-text" class="party-title" style="font-size: 1.5rem; margin-bottom: 20px;"></h1>
-                <div id="correct-answer" style=" margin-bottom:15px; font-weight:600; color:#6c5ce7;"></div>
-                <div id="players-answers-grid" class="party-scroll-list"></div>
+    </div>
+
+
+    <!-- PLAYER -->
+    <div id="player-screen" class="party-card" style="display:none;">
+
+        <!-- название -->
+        <div class="quiz-header">
+            <div class="quiz-sub">QUIZ PARTY</div>
+            <div id="quiz-title-player" class="quiz-title"></div>
+        </div>
+
+        <div id="player-wait">
+
+            <span class="emoji-logo">🎈</span>
+
+            <h1 class="party-title">ТЫ В ИГРЕ!</h1>
+
+            <p class="party-subtitle">
+                Ждем, пока организатор начнет раунд...
+            </p>
+            <div class="lobby-interactive-zone">
+                <div id="lobby-clicker-toy" class="bouncing-ball">🎈</div>
+                <p class="hint-text">Пока ждёшь, попинай шарик!</p>
                 
-                <div style="display: flex; gap: 10px; margin-top: 25px;">
-                    <button id="next-btn" onclick="nextQuestion()" class="btn-party-main" style="background: var(--party-purple); flex: 2;">ДАЛЬШЕ ➡️</button>
+                <div class="players-party-container">
+                    <span class="mini-label">В КОМНАТЕ</span>
+                    <div id="player-lobby-list" class="party-avatars-grid">
+                        </div>
                 </div>
             </div>
+            
+
+
         </div>
 
-        <div id="player-screen" class="party-card" style="display: none;">
-            <div id="player-wait">
-                <span class="emoji-logo">🎈</span>
-                <h1 class="party-title">ТЫ В ИГРЕ!</h1>
-                <p class="party-subtitle">Ждем, пока организатор начнет раунд...</p>
-            </div>
 
-            <div id="player-game-area" style="display: none;">
-                <h1 id="player-question-text" class="party-title" style="font-size: 1.4rem;"></h1>
-                <div id="player-answer-area"></div>
-            </div>
-        </div>
+        <div id="player-game-area" style="display:none;">
 
-        <div id="finish-screen" class="party-card" style="display: none;">
-            <div id="final-results-list" class="list-zone"></div>
-            <button onclick="location.href='index.html'" class="btn-party-direct" style="margin-top:20px">В ГЛАВНОЕ МЕНЮ</button>
+            <h1 id="player-question-text" class="party-title" style="font-size:1.4rem;"></h1>
+
+            <div id="player-answer-area"></div>
+
         </div>
 
     </div>
 
-    <div id="confirm-overlay" class="modern-confirm-overlay" style="display:none;">
-        <div class="party-card modern-confirm-box">
-            <h2 style="color: var(--party-purple)">Стоп-стоп! ✋</h2>
-            <p>Некоторые игроки ещё думают. Всё равно переключаем вопрос?</p>
-            <div style="display: flex; gap: 10px;">
-                <button onclick="document.getElementById('confirm-overlay').style.display='none'" class="btn-party-main" style="background:#b2bec3">НЕТ</button>
-                <button id="confirm-proceed-btn" class="btn-party-main">ДА, ДАЛЬШЕ</button>
-            </div>
-        </div>
+
+    <!-- FINISH -->
+    <div id="finish-screen" class="party-card" style="display:none;">
+
+        <div id="final-results-list" class="list-zone"></div>
+
+        <button onclick="location.href='index.html'"
+                class="btn-party-direct"
+                style="margin-top:20px">
+            В ГЛАВНОЕ МЕНЮ
+        </button>
+
     </div>
 
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="js/game.js"></script>
+</div>
+
+
+
+<!-- CONFIRM -->
+<div id="confirm-overlay" class="modern-confirm-overlay" style="display:none;">
+
+    <div class="party-card modern-confirm-box">
+
+        <h2 style="color:var(--party-purple)">Стоп-стоп ✋</h2>
+
+        <p>Некоторые игроки ещё думают. Всё равно переключаем вопрос?</p>
+
+        <div style="display:flex;gap:10px;">
+
+            <button onclick="document.getElementById('confirm-overlay').style.display='none'"
+                    class="btn-party-main"
+                    style="background:#b2bec3">
+                НЕТ
+            </button>
+
+            <button id="confirm-proceed-btn" class="btn-party-main">
+                ДА, ДАЛЬШЕ
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="js/game.js"></script>
+
 </body>
 </html>
