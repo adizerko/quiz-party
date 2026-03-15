@@ -1,17 +1,11 @@
 const socket = io();
 
-let isGameStarted = false;
 let myEmoji = '👤';
 let currentStep = 0;
+let realGameStep = 0;
 let maxReachedStep = 0;
 let currentQuestions = [];
-let scoreChanges = {};
-let scoreOverrides = {};
 
-let answersHistory = {}
-
-
-const scoreOverride = {};
 const urlParams = new URLSearchParams(window.location.search);
 const roomCode = urlParams.get('room');
 const role = urlParams.get('role');
@@ -57,11 +51,16 @@ function startGame() {
 
 function nextQuestion() {
 
+    if (currentStep !== realGameStep) {
+        currentStep = realGameStep;
+        refreshUI();
+        return;
+    }
+
     socket.emit("check_answers_before_next", {
         room: roomCode,
         step: currentStep
     });
-
 }
 
 function showModernConfirm(msg, onConfirm) {
@@ -99,7 +98,6 @@ function renderProgress() {
         if (i < maxReachedStep) stateClass = "done";
         if (i === currentStep) stateClass = "active";
 
-        // Точка пульсирует именно под тем вопросом, на котором реально идет игра (maxReachedStep)
         const showDot = (i === maxReachedStep);
 
         return `
@@ -129,11 +127,9 @@ function renderScoreboard(players) {
         .filter(p => !p.is_host)
         .sort((a, b) => (b.score || 0) - (a.score || 0));
 
-    // Находим самый высокий балл
     const maxScore = sorted.length > 0 ? sorted[0].score : 0;
 
     board.innerHTML = sorted.map((p, i) => {
-        // Лидер — каждый, у кого балл равен максимальному (и он больше нуля)
         const isLeader = p.score === maxScore && maxScore > 0;
 
         return `
@@ -143,21 +139,6 @@ function renderScoreboard(players) {
         </div>
         `;
     }).join("");
-}
-
-function handleScoreClick(playerName, points) {
-    const key = `${playerName}_${currentStep}`;
-    
-    socket.emit("override_score", {
-        room: roomCode,
-        playerName: playerName,
-        points: points,
-        questionIndex: currentStep
-    });
-
-    scoreOverrides[key] = !scoreOverrides[key];
-    
-    socket.emit("get_update", roomCode); 
 }
 
 function sendAnswer(val) {
@@ -176,24 +157,6 @@ function sendAnswer(val) {
     `;
 }
 
-const playerEmojis = [
-    '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', 
-    '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', 
-    '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', 
-    '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', 
-    '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', 
-    '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', 
-    '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', 
-    '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', 
-    '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', 
-    '👿', '👹', '👺', '🤡', '👻', '💀', '☠️', '👽', '👾', '🤖', 
-    '💩', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾'
-];
-
-function getRandomEmoji() {
-    return playerEmojis[Math.floor(Math.random() * playerEmojis.length)];
-}
-
 socket.on('update_players', (players) => {
     const list = document.getElementById('lobby-players-list');
     if (list && role === 'host') {
@@ -206,11 +169,10 @@ socket.on('update_players', (players) => {
     }
 });
 
-
 socket.on("game_started", (players) => {
     currentStep = 0; 
     maxReachedStep = 0;
-
+    realGameStep = 0;
     const me = players.find(p => p.name === playerName);
     
     if (me) myEmoji = me.emoji;
@@ -250,7 +212,7 @@ socket.on("update_answers", (players) => {
     
     renderScoreboard(players);
     const grid = document.getElementById("players-answers-grid");
-    if (!grid) return; // Защита от ошибок
+    if (!grid) return;
 
     const currentQ = currentQuestions[currentStep];
 
@@ -260,8 +222,6 @@ socket.on("update_answers", (players) => {
         const stepKey = currentStep.toString();
         const answerText = answers[stepKey];
         const questionScore = scores[stepKey];
-        
-        // ПРОВЕРКА: есть ли ответ в истории?
         const isAnswered = (answerText !== undefined && answerText !== null && answerText.toString().trim() !== "");
 
         let statusClass = "waiting";
@@ -316,7 +276,6 @@ socket.on('show_results', (data) => {
 
     const players = data.results;
     const maxScore = players.length > 0 ? players[0].score : 0;
-    
     const winners = players.filter(p => p.score === maxScore && maxScore > 0);
     const others = players.filter(p => p.score !== maxScore || maxScore === 0);
 
@@ -356,51 +315,46 @@ socket.on('show_results', (data) => {
                 </div>
             </div>
         ` : ''}
-        
-        `;
+    `;
 });
 
 socket.on("move_to_next", (data) => {
+    realGameStep = data.step;
     currentStep = data.step;
+
     if (currentStep > maxReachedStep) {
         maxReachedStep = currentStep;
     }
+
     refreshUI();
 });
 
 socket.on("answers_check_result", (data) => {
-
     if (!data.allAnswered) {
-
         showModernConfirm("Не все ответили! Всё равно идём дальше?", () => {
             proceedToNext();
         });
-
     } else {
         proceedToNext();
     }
-
 });
 
-// Новый обработчик для восстановления состояния
 socket.on('sync_state', (data) => {
     currentStep = data.currentStep;
+    realGameStep = data.currentStep;
     if (data.emoji) myEmoji = data.emoji;
 
     if (role === 'host') {
-        // Хост переходит в игру ТОЛЬКО если шаг 0 или выше
         if (currentStep >= 0) {
             document.getElementById("host-lobby").style.display = "none";
             document.getElementById("host-game-area").style.display = "block";
             updateHostUI();
             renderProgress();
         } else {
-            // Если шаг -1, принудительно показываем лобби
             document.getElementById("host-lobby").style.display = "block";
             document.getElementById("host-game-area").style.display = "none";
         }
     } else {
-        // Логика для игрока
         if (data.isStarted) {
             document.getElementById("player-wait").style.display = "none";
             document.getElementById("player-game-area").style.display = "block";
@@ -422,11 +376,35 @@ function refreshUI() {
     renderProgress();
     if (role === 'host') {
         updateHostUI();
-        // Запрашиваем актуальные данные игроков для этого шага
         socket.emit("get_update", roomCode); 
         
         const btn = document.getElementById('next-btn');
-        btn.innerText = (currentStep === currentQuestions.length - 1) ? "Финиш" : "Следующий";
+        if (btn) {
+
+            if (currentStep !== realGameStep) {
+
+                btn.innerText = "↩ Вернуться к текущему вопросу";
+                btn.onclick = () => {
+                    currentStep = realGameStep;
+
+                    // обновляем UI
+                    refreshUI();
+
+                    // запрашиваем актуальные ответы игроков
+                    socket.emit("get_update", roomCode);
+                };
+
+            } else {
+
+                btn.onclick = nextQuestion;
+
+                btn.innerText =
+                    (currentStep === currentQuestions.length - 1)
+                    ? "🏆 ПОДВЕСТИ ИТОГИ"
+                    : "СЛЕДУЮЩИЙ ВОПРОС";
+            }
+
+        }
     } else {
         renderPlayerQuestion();
     }
@@ -439,7 +417,6 @@ function updateHostUI() {
     document.getElementById("host-question-text").innerText = `${currentStep + 1}. ${q.text}`;
     document.getElementById("correct-answer").innerText = "Правильный ответ: " + q.correct;
 
-    // Меняем текст и стиль кнопки на последнем шаге
     const nextBtn = document.getElementById('next-btn');
     if (nextBtn) {
         if (isLastQuestion) {
@@ -480,7 +457,6 @@ function renderPlayerQuestion() {
         </div>
     `;
     
-    // Код отрисовки кнопок/инпута ниже оставляем без изменений...
     if (q.type === 'options') {
         area.innerHTML = `
             <div class="menu-grid" style="margin-top: 25px;">
@@ -495,42 +471,6 @@ function renderPlayerQuestion() {
             </div>
         `;
     }
-}
-
-function showToast(text) {
-
-    let toast = document.getElementById("toast");
-
-    if (!toast) {
-
-        toast = document.createElement("div");
-        toast.id = "toast";
-
-        toast.style.position = "fixed";
-        toast.style.bottom = "30px";
-        toast.style.left = "50%";
-        toast.style.transform = "translateX(-50%)";
-
-        toast.style.background = "#333";
-        toast.style.color = "white";
-
-        toast.style.padding = "12px 20px";
-        toast.style.borderRadius = "12px";
-
-        toast.style.fontWeight = "600";
-        toast.style.zIndex = "9999";
-
-        document.body.appendChild(toast);
-
-    }
-
-    toast.innerText = text;
-    toast.style.display = "block";
-
-    setTimeout(() => {
-        toast.style.display = "none";
-    }, 2000);
-
 }
 
 window.onload = init;

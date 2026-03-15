@@ -13,7 +13,6 @@ class Quiz(Base):
     # Связь с игроками
     players = relationship("Player", back_populates="quiz", cascade="all, delete-orphan")
 
-# models.py
 class Player(Base):
     __tablename__ = "players"
     id = Column(Integer, primary_key=True, index=True)

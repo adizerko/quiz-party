@@ -321,6 +321,26 @@ async def handle_finish(sid, data):
     finally:
         db.close()
 
+@sio_manager.on("get_update")
+async def get_update(sid, room):
+
+    db = next(database.get_db())
+
+    try:
+        quiz = db.query(models.Quiz).filter(models.Quiz.code == room).first()
+
+        if quiz:
+            players = get_players_in_quiz(db, quiz.id)
+
+            await sio_manager.emit(
+                "update_answers",
+                players,
+                room=sid
+            )
+
+    finally:
+        db.close()
+
 @sio_manager.on("check_answers_before_next")
 async def check_answers(sid, data):
 

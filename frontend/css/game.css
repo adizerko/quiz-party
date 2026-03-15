@@ -38,45 +38,6 @@ body {
     animation: fadeIn 0.5s ease-out;
 }
 
-/* Элементы списка игроков/ответов */
-.question-item-complex, .player-row {
-    background: white;
-    border-radius: 20px;
-    padding: 15px 20px;
-    margin-bottom: 12px;
-    border: 2px solid #f0f2f5;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    display: flex;
-    flex-direction: column;
-    text-align: left;
-}
-
-.question-item-complex.is-correct {
-    border-color: var(--success-green);
-    background: #f1fdf6;
-    transform: scale(1.02);
-}
-
-.question-item-complex.is-wrong {
-    border-color: var(--error-red);
-    background: #fff5f5;
-}
-
-/* Иконки и бейджи */
-.player-icon {
-    width: 45px;
-    height: 45px;
-    background: var(--party-purple);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 800;
-    margin-right: 15px;
-    font-size: 0.9rem;
-}
-
 /* Кнопки управления */
 .btn-party-main, .btn-party-direct {
     width: 100%;
@@ -98,19 +59,6 @@ body {
     transform: translateY(-3px);
     box-shadow: 0 12px 25px rgba(255, 133, 161, 0.4);
 }
-
-.btn-party-add {
-    flex: 1;
-    border: none;
-    border-radius: 10px;
-    color: white;
-    padding: 10px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-.btn-party-add:hover { opacity: 0.9; }
 
 /* Кнопки ответов для игрока */
 .btn-answer {
@@ -156,19 +104,7 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Скроллбар */
-.party-scroll-list {
-    max-height: 400px;
-    overflow-y: auto;
-    padding-right: 5px;
-}
-
-.party-scroll-list::-webkit-scrollbar { width: 6px; }
-.party-scroll-list::-webkit-scrollbar-thumb { background: #dcdde1; border-radius: 10px; }
-
-/* --- НОВЫЕ СТИЛИ ДЛЯ СПИСКА ИГРОКОВ С ЭМОДЗИ --- */
-
-/* Компактная строка игрока в Лобби */
+/* --- СТИЛИ ДЛЯ СПИСКА ИГРОКОВ --- */
 .player-row-lobby {
     display: flex;
     align-items: center;
@@ -181,40 +117,21 @@ body {
     animation: slideInRight 0.3s ease-out;
 }
 
-/* Эмодзи-иконка */
 .player-emoji-icon {
-    font-size: 2.8rem; /* Крупный эмодзи */
+    font-size: 2.8rem;
     margin-right: 15px;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 30px; /* Чтобы все имена были на одном уровне */
+    min-width: 30px; 
 }
 
-/* Имя игрока в лобби */
 .player-name-lobby {
     font-weight: 700;
     font-size: 1.1rem;
-    color: var(--party-text);
+    color: #2d3436;
 }
 
-/* Компактный заголовок карточки ответа */
-.q-header-compact {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
-    border-bottom: 1px dashed #eee;
-    padding-bottom: 8px;
-}
-
-/* Иконка галочки/крестика ответа */
-.answer-check-icon {
-    margin-left: auto; /* Прижимаем к правому краю */
-    font-size: 1.2rem;
-    font-weight: 800;
-}
-
-/* Маленькая анимация появления */
 @keyframes slideInRight {
     from { opacity: 0; transform: translateX(20px); }
     to { opacity: 1; transform: translateX(0); }
@@ -228,12 +145,7 @@ body {
     100% { transform: scale(1) rotate(0); }
 }
 
-.winner-announcement {
-    text-align: center;
-}
-
-/* progress questions */
-
+/* --- ПРОГРЕСС ВОПРОСОВ --- */
 #questions-progress {
     display: flex;
     flex-wrap: wrap;
@@ -245,25 +157,48 @@ body {
 .q-step {
     width: 32px;
     height: 32px;
-
     background: #eee;
     border-radius: 8px;
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     font-weight: 700;
     cursor: pointer;
 }
 
+.q-step.active {
+    background: #6366f1;
+    color: white;
+    transform: scale(1.15);
+    box-shadow: 0 0 10px rgba(99,102,241,0.6);
+}
+
 .q-step.done {
-    background: var(--success-green);
+    background: #22c55e;
     color: white;
 }
 
-/* scoreboard */
+.q-step.future {
+    background: #e5e7eb;
+}
 
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--party-pink);
+    border-radius: 50%;
+    margin-top: 4px;
+    box-shadow: 0 0 0 0 rgba(255, 133, 161, 0.7);
+    animation: pulse-dot-anim 1.5s infinite;
+}
+
+@keyframes pulse-dot-anim {
+    0% { box-shadow: 0 0 0 0 rgba(255, 133, 161, 0.7); }
+    70% { box-shadow: 0 0 0 6px rgba(255, 133, 161, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 133, 161, 0); }
+}
+
+/* --- SCOREBOARD --- */
 #scoreboard {
     background: white;
     padding: 10px;
@@ -277,43 +212,35 @@ body {
     font-weight: 700;
 }
 
+.leader-row {
+    background: linear-gradient(90deg,#fff3cd,#ffe08a);
+    border-radius:8px;
+    font-weight:700;
+}
+
+/* --- КАРТОЧКИ ОТВЕТОВ --- */
 .answer-card {
-
     background: white;
-
     border-radius: 16px;
-
     padding: 14px;
-
     margin-bottom: 12px;
-
     display: flex;
     justify-content: space-between;
     align-items: center;
-
     box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-
 }
+
+.answer-card.correct { background:#ecfdf5; border:2px solid #10b981; }
+.answer-card.wrong { background:#fef2f2; border:2px solid #ef4444; }
+.answer-card.waiting { background:#f9fafb; border:2px solid #e5e7eb; }
 
 .answer-info {
-
     display: flex;
     flex-direction: column;
-
 }
 
-.answer-name {
-
-    font-weight: 700;
-
-}
-
-.answer-text {
-
-    font-size: 14px;
-    opacity: .7;
-
-}
+.answer-name { font-weight: 700; }
+.answer-text { font-size: 14px; opacity: .7; }
 
 .answer-buttons {
     display: flex;
@@ -321,57 +248,48 @@ body {
     margin-left: 10px;
 }
 
-
-.btn-score {
-
+/* --- КНОПКИ УПРАВЛЕНИЯ БАЛЛАМИ (ГАЛОЧКА/КРЕСТИК) --- */
+.btn-control {
+    width: 36px; 
+    height: 36px;
+    border-radius: 10px; 
     border: none;
-
-    border-radius: 10px;
-
-    padding: 6px 10px;
-
-    font-weight: 700;
-
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-
+    transition: all 0.2s;
 }
 
-.btn-plus {
+.btn-control:active { transform: scale(0.9); }
 
-    background: #2ecc71;
+.btn-accept {
+    background: #2ed573;
     color: white;
-
+    box-shadow: 0 4px 15px rgba(46, 213, 115, 0.3);
 }
 
-.btn-minus {
+.btn-accept:hover { background: #26af5f; box-shadow: 0 6px 20px rgba(46, 213, 115, 0.4); }
 
-    background: #ff7675;
+.btn-reject {
+    background: #ff4757;
     color: white;
-
+    box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
 }
 
-.leader-row {
-    background: linear-gradient(90deg,#fff3cd,#ffe08a);
-    border-radius:8px;
-    font-weight:700;
+.btn-reject:hover { background: #e84118; box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4); }
+
+.btn-control svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
-.answer-card.correct{
-background:#ecfdf5;
-border:2px solid #10b981;
-}
-
-.answer-card.wrong{
-background:#fef2f2;
-border:2px solid #ef4444;
-}
-
-.answer-card.waiting{
-background:#f9fafb;
-border:2px solid #e5e7eb;
-}
-
-/* --- СОВРЕМЕННЫЙ МОДАЛЬНЫЙ АЛЕРТ --- */
+/* --- МОДАЛЬНЫЙ АЛЕРТ --- */
 .modern-confirm-overlay {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -391,77 +309,21 @@ border:2px solid #e5e7eb;
     animation: tada 0.5s ease-in-out;
 }
 
-.q-step.active {
-    background: #6366f1;
-    color: white;
-    transform: scale(1.15);
-    box-shadow: 0 0 10px rgba(99,102,241,0.6);
-}
-
-.q-step.done {
-    background: #22c55e;
-    color: white;
-}
-
-.q-step.future {
-    background: #e5e7eb;
-}
-
-/* Пульсирующая точка для текущего активного вопроса */
-.pulse-dot {
-    width: 8px;
-    height: 8px;
-    background: var(--party-pink);
-    border-radius: 50%;
-    margin-top: 4px;
-    box-shadow: 0 0 0 0 rgba(255, 133, 161, 0.7);
-    animation: pulse-dot-anim 1.5s infinite;
-}
-
-@keyframes pulse-dot-anim {
-    0% { box-shadow: 0 0 0 0 rgba(255, 133, 161, 0.7); }
-    70% { box-shadow: 0 0 0 6px rgba(255, 133, 161, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(255, 133, 161, 0); }
-}
-
-.falling-cup {
-    font-size: 4rem;
-    display: block;
-    margin-bottom: 10px;
-    animation: dropIn 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-@keyframes dropIn {
-    0% { transform: translateY(-100px) scale(0); opacity: 0; }
-    60% { transform: translateY(20px) scale(1.2); }
-    100% { transform: translateY(0) scale(1); opacity: 1; }
-}
-
-.winner-highlight {
-    background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%) !important;
-    border: 3px solid #ffcc00 !important;
-    box-shadow: 0 10px 25px rgba(255, 204, 0, 0.4) !important;
-    padding: 20px !important;
-    margin-bottom: 25px !important;
-}
-
-/* Элегантное оформление финала */
+/* --- ФИНАЛЬНЫЙ ЭКРАН ПОБЕДИТЕЛЯ --- */
 .confetti-wrapper {
     position: relative;
-    padding: 10px; /* Уменьшили отступы */
+    padding: 10px; 
     border-radius: 20px;
     background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,249,230,0.4) 100%);
     margin-bottom: 20px;
 }
 
-/* Золотая аура для победителя — стильнее и компактнее */
 .winner-card-epic {
     background: white !important;
     border: 3px solid #FFD700 !important;
     box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
     position: relative;
     z-index: 2;
-    /* Убрали постоянный Bounce, оставили только спокойное свечение */
     animation: winnerGlow 2s infinite ease-in-out;
     margin-bottom: 20px !important;
 }
@@ -471,11 +333,6 @@ border:2px solid #e5e7eb;
     50% { box-shadow: 0 12px 35px rgba(255, 215, 0, 0.5); }
 }
 
-@keyframes shineName {
-    to { background-position: 200% center; }
-}
-
-/* Анимация короны при появлении */
 .crown-appear {
     font-size: 2.5rem;
     display: inline-block;
@@ -489,7 +346,6 @@ border:2px solid #e5e7eb;
     100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 
-/* Эффект сияния для имени победителя */
 .shiny-text-name {
     background: linear-gradient(90deg, #b8860b, #daa520, #b8860b);
     background-size: 200% auto;
@@ -499,96 +355,6 @@ border:2px solid #e5e7eb;
     font-weight: 800;
 }
 
-/* Эффект сияния текста */
-.shiny-text {
-    background: linear-gradient(90deg, #FFD700, #FFF5B7, #FFD700);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: shine 3s linear infinite;
-    font-weight: 900;
-    text-transform: uppercase;
-}
-
-@keyframes winnerBounce {
-    0%, 100% { transform: scale(1.05) translateY(0); }
-    50% { transform: scale(1.07) translateY(-5px); }
-}
-
-@keyframes shine {
+@keyframes shineName {
     to { background-position: 200% center; }
-}
-
-.crown-float {
-    font-size: 3rem;
-    display: block;
-    filter: drop-shadow(0 5px 10px rgba(0,0,0,0.2));
-    animation: floating 2s infinite ease-in-out;
-}
-
-@keyframes floating {
-    0%, 100% { transform: translateY(0) rotate(-5deg); }
-    50% { transform: translateY(-15px) rotate(5deg); }
-}
-
-/* Контейнер для кнопок управления */
-.score-controls {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-}
-
-/* Общий стиль кнопок-бабблов */
-/* Убедись, что эти значения такие, иначе кнопки будут огромными */
-.btn-control {
-    width: 36px;  /* Было 42, сделаем чуть компактнее */
-    height: 36px;
-    border-radius: 10px; /* Сделаем форму как у твоих карточек */
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-
-
-.btn-control:active {
-    transform: scale(0.9);
-}
-
-/* Кнопка "Принять" */
-.btn-accept {
-    background: #2ed573;
-    color: white;
-    box-shadow: 0 4px 15px rgba(46, 213, 115, 0.3);
-}
-
-.btn-accept:hover {
-    background: #26af5f;
-    box-shadow: 0 6px 20px rgba(46, 213, 115, 0.4);
-}
-
-/* Кнопка "Отклонить" */
-.btn-reject {
-    background: #ff4757;
-    color: white;
-    box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
-}
-
-.btn-reject:hover {
-    background: #e84118;
-    box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
-}
-
-/* Иконки внутри */
-.btn-control svg {
-    width: 20px;
-    height: 20px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 3;
-    stroke-linecap: round;
-    stroke-linejoin: round;
 }
