@@ -541,6 +541,22 @@ document.addEventListener('click', (e) => {
 });
 
 
+window.spawnConfetti = function(event) {
+    const x = event.clientX / window.innerWidth;
+    const y = event.clientY / window.innerHeight;
+
+    confetti({
+        particleCount: 150, // БЫЛО 40 — ТЕПЕРЬ ЦЕЛЫЙ ВОРОХ!
+        spread: 50,        // Увеличили угол разлета
+        origin: { x: x, y: y },
+        colors: ['#FFD700', '#f175ff', '#43fff2', '#ffffff'],
+        ticks: 300,         // Конфетти будут лететь чуть дольше
+        gravity: 0.8,       // Сделали их чуть легче (стандарт 1)
+        scalar: 1.2,        // Сами конфетти стали чуть крупнее
+        disableForReducedMotion: true
+    });
+};
+
 // Точка входа модуля — инициализация страницы игры.
 window.onload = init;
 

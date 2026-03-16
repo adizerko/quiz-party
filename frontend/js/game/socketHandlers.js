@@ -183,6 +183,32 @@ socket.on("show_results", (data) => {
   document.getElementById("player-screen").style.display = "none";
   document.getElementById("finish-screen").style.display = "block";
 
+  // ЗАПУСК КОНФЕТТИ
+  // Стреляем дважды с разных сторон для "эпичности"
+  const duration = 3 * 1000; // 3 секунды
+  const end = Date.now() + duration;
+
+  (function frame() {
+    confetti({
+      particleCount: 3,
+      angle: 60,
+      spread: 55,
+      origin: { x: 0, y: 0.8 },
+      colors: ['#FFD700', '#f175ff', '#43fff2'] // Твои фирменные цвета
+    });
+    confetti({
+      particleCount: 3,
+      angle: 120,
+      spread: 55,
+      origin: { x: 1, y: 0.8 },
+      colors: ['#FFD700', '#f175ff', '#43fff2']
+    });
+
+    if (Date.now() < end) {
+      requestAnimationFrame(frame);
+    }
+  }());
+
   const resultsList = document.getElementById("final-results-list");
   if (!resultsList) return;
 
@@ -210,17 +236,20 @@ socket.on("show_results", (data) => {
             ${winners
               .map(
                 (w) => `
-                <div class="player-row-lobby winner-card-epic" style="padding: 15px 20px; justify-content: flex-start; margin-bottom: 10px;">
-                    <span class="player-emoji-icon" style="font-size: 3rem; margin-right: 15px;">${
-                      w.emoji
-                    }</span>
+                <div class="player-row-lobby winner-card-epic" 
+                    onclick="spawnConfetti(event)"
+                    style="padding: 15px 20px; justify-content: flex-start; margin-bottom: 10px; position: relative; overflow: visible; cursor: pointer; -webkit-tap-highlight-color: transparent;">
+                    
+                    <div class="winner-emoji-container" style="margin-right: 15px;">
+                        ${w.emoji}
+                    </div>
+                    
                     <div style="text-align: left; flex: 1;">
                         <div style="font-size: 0.7rem; opacity: 0.6; font-weight: 700; text-transform: uppercase;">Победитель</div>
-                        <div class="shiny-text-name" style="font-size: 1.4rem;">${
-                          w.name
-                        }</div>
+                        <div class="shiny-text-name" style="font-size: 1.4rem;">${w.name}</div>
                     </div>
-                    <div style="background: #FFD700; color: #000; padding: 5px 15px; border-radius: 15px; font-weight: 800; font-size: 1.2rem;">
+                    
+                    <div style="background: #FFD700; color: #000; padding: 5px 15px; border-radius: 15px; font-weight: 800; font-size: 1.2rem; box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);">
                         ${w.score}
                     </div>
                 </div>
@@ -238,18 +267,15 @@ socket.on("show_results", (data) => {
                     ${others
                       .map(
                         (p, i) => `
-                        <div class="player-row-lobby" style="background: transparent; border: none; border-bottom: 1px solid rgba(0,0,0,0.03); box-shadow: none; margin-bottom: 0; padding: 10px 15px;">
-                            <span style="font-weight: 800; opacity: 0.3; width: 25px; font-size: 0.9rem;">#${i +
-                              2}</span>
-                            <span class="player-emoji-icon" style="font-size: 1.4rem; margin-right: 10px;">${
-                              p.emoji
-                            }</span>
-                            <span class="player-name-lobby" style="flex: 1; text-align: left; font-size: 1rem; font-weight: 600;">${
-                              p.name
-                            }</span>
-                            <span style="font-weight: 700; opacity: 0.7; font-size: 1rem;">${
-                              p.score
-                            }</span>
+                        <div class="player-row-lobby" style="background: transparent; border: none; border-bottom: 1px solid rgba(0,0,0,0.03); box-shadow: none; margin-bottom: 0; padding: 10px 15px; align-items: center;">
+                            <span style="font-weight: 800; opacity: 0.3; width: 25px; font-size: 0.9rem;">#${i + 2}</span>
+                            
+                            <div class="participant-emoji-container" style="margin-right: 10px;">
+                                ${p.emoji}
+                            </div>
+
+                            <span class="player-name-lobby" style="flex: 1; text-align: left; font-size: 1rem; font-weight: 600;">${p.name}</span>
+                            <span style="font-weight: 700; opacity: 0.7; font-size: 1rem;">${p.score}</span>
                         </div>
                     `
                       )
@@ -265,10 +291,10 @@ socket.on("show_results", (data) => {
                     const content = document.getElementById('review-content');
                     const arrow = document.getElementById('acc-arrow');
                     content.classList.toggle('active');
-                    arrow.style.transform = content.classList.contains('active') ? 'rotate(180deg)' : 'rotate(0deg)';
+                    arrow.style.transform = content.classList.contains('active') ? 'rotate(180deg)' : 'rotate(0deg)' ;
                  " 
-                 style="background: rgba(67, 255, 242, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 15px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; -webkit-tap-highlight-color: transparent;">
-                <span style="font-weight: 800; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px; color: #2d3436;">Разбор вопросов 🔍</span>
+                 style="background: rgba(67, 255, 242, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 15px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; -webkit-tap-highlight-color: transparent; border: 1px solid #f1dbff;">
+                <span style="font-weight: 800; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px; color: #2d3436; ">Разбор вопросов 🔍</span>
                 <span id="acc-arrow" style="transition: transform 0.4s ease; font-size: 0.7rem; color: #2d3436;">▼</span>
             </div>
 

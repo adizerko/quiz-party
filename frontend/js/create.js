@@ -3,10 +3,12 @@ let editIndex = -1; // Индекс редактируемого вопроса
 
 // В самом начале файла можно сразу задать состояние
 document.addEventListener('DOMContentLoaded', () => {
-    // Если мы на странице создания, сбрасываем форму
     if (document.getElementById('q-input-type')) {
         clearForm();
     }
+
+    const listZone = document.querySelector('.list-zone');
+    if (listZone) listZone.style.display = "none";
 });
 
 function showToast(message) {
@@ -108,36 +110,58 @@ function addQuestionToList() {
 function renderQuestions() {
     const list = document.getElementById('questions-list');
     const countEl = document.getElementById('q-count');
+    const listZone = document.querySelector('.list-zone');
+
     list.innerHTML = "";
     countEl.innerText = quizQuestions.length;
 
+    // Если нет вопросов — скрываем весь блок
+    if (quizQuestions.length === 0) {
+        listZone.style.display = "none";
+        return;
+    } else {
+        listZone.style.display = "block";
+    }
+
     quizQuestions.forEach((q, index) => {
         const div = document.createElement('div');
-        div.className = "question-item-complex";
+        div.className = "question-row";
 
         let answersHtml = "";
         if (q.type === 'options') {
             answersHtml = `<div class="preview-options-grid">`;
             q.options.forEach(opt => {
                 const isCorrect = opt === q.correct;
-                answersHtml += `<div class="preview-opt-item ${isCorrect ? 'is-correct' : ''}">${opt} ${isCorrect ? '✓' : ''}</div>`;
+                answersHtml += `<div class="preview-opt-item ${isCorrect ? 'is-correct' : ''}">${opt} ${isCorrect ? '<i class="fa fa-check"></i>' : ''}</div>`;
             });
             answersHtml += `</div>`;
         } else {
-            answersHtml = `<div class="preview-correct-text">Правильный ответ: ${q.correct}</div>`;
+            answersHtml = `<div class="preview-correct-text">Ответ: ${q.correct}</div>`;
         }
 
         div.innerHTML = `
-            <div class="q-header-row">
-                <div style="flex: 1; padding-right: 20px;">
-                    <b style="color: #6c5ce7; font-size: 1.1rem;">${index + 1}. ${q.text}</b>
+        <div class="question-card">
+
+            <div class="question-top">
+                <div class="question-number">${index + 1}</div>
+
+                <div class="question-text">
+                    ${q.text}
                 </div>
-                <div class="q-actions">
-                    <button class="action-btn btn-edit" onclick="editQuestion(${index})" title="Редактировать">✏️</button>
-                    <button class="action-btn btn-delete" onclick="removeQuestion(${index})" title="Удалить">🗑️</button>
+
+                <div class="question-actions">
+                    <button class="action-btn btn-edit" onclick="editQuestion(${index})">
+                        <i class="fa fa-pen"></i>
+                    </button>
+                    <button class="action-btn btn-delete" onclick="removeQuestion(${index})">
+                        <i class="fa fa-trash"></i>
+                    </button>
                 </div>
             </div>
+
             ${answersHtml}
+
+        </div>
         `;
         list.appendChild(div);
     });
