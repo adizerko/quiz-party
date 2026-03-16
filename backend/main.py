@@ -55,7 +55,7 @@ def create_quiz(quiz_data: schemas.QuizCreate, db: Session = Depends(database.ge
 def get_quiz(code: str, db: Session = Depends(database.get_db)):
     quiz = db.query(models.Quiz).filter(models.Quiz.code == code).first()
     if not quiz:
-        raise HTTPException(status_code=404, detail="Викторина не найдена")
+        raise HTTPException(status_code=404, detail="The quiz was not found")
     return quiz
 
 

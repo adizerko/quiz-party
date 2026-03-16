@@ -646,14 +646,6 @@ body::after {
     font-weight:700;
 }
 
-.room-code-wrapper {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    cursor: pointer;
-    user-select: none;
-}
-
 #copy-room-btn {
     background: none;
     border: none;
@@ -1698,4 +1690,131 @@ body::after {
     65% { transform: scale(0.95, 1.05); }
     75% { transform: scale(1.05, 0.95); }
     100% { transform: scale(1); }
+}
+
+.room-share-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px 0;
+    min-height: 50px;
+}
+
+#display-room-code {
+    font-weight: 800;
+    font-size: 1rem;
+    color: #6c5ce7;
+    letter-spacing: 1px;
+    pointer-events: none; /* Магия: клики будут "пролетать" сквозь текст на родителя */
+    user-select: none !important;
+}
+
+.icon-only-btn {
+    background: #6c5ce7;
+    color: white;
+    border: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.icon-only-btn:hover {
+    transform: scale(1.1);
+    background: #5b4bc4;
+}
+
+/* Состояние при копировании */
+.fade-out {
+    opacity: 0;
+    transform: scale(0.8);
+    pointer-events: none;
+}
+
+.copy-success-hidden {
+    position: absolute;
+    color: #00b894;
+    font-weight: 800;
+    font-size: 1.1rem;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.4s ease;
+}
+
+.copy-success-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Основной контейнер */
+.room-code-wrapper {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    border: 2px solid #6c5ce7;
+    border-radius: 20px;
+    padding: 5px 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 20px rgba(108, 92, 231, 0.15);
+    
+    /* ИСПРАВЛЕНИЕ 1: Запрещаем выделение текста мышкой */
+    user-select: none; 
+    -webkit-user-select: none;
+}
+
+#display-room-code {
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: #6c5ce7;
+    letter-spacing: 1px;
+    cursor: pointer;
+    padding: 5px 8px;
+    /* ИСПРАВЛЕНИЕ 2: Указатель всегда как на кнопке */
+    cursor: pointer !important; 
+}
+
+
+/* АДАПТАЦИЯ ДЛЯ ТЕЛЕФОНОВ */
+@media (max-width: 480px) {
+    .room-code-wrapper {
+        gap: 8px !important;
+        padding: 1px 4px !important;
+        border-radius: 15px;
+    }
+
+    /* Сама кнопка-контейнер */
+    .icon-only-btn {
+        width: 22px !important;
+        height: 22px !important;
+        border-radius: 10px !important;
+    }
+
+    /* Сама иконка внутри (SVG) */
+    .icon-only-btn svg {
+        /* Используем !important, чтобы перебить атрибуты width/height в HTML */
+        width: 12px !important; 
+        height: 12px !important;
+        stroke-width: 3; /* Сделаем линии чуть толще, раз иконка меньше */
+    }
+
+    #display-room-code {
+        font-size: 0.5rem !important;
+        padding: 4px 6px !important;
+    }
+    
+    .room-share-container {
+        margin: 10px 0; /* Уменьшаем отступы */
+    }
+
+    .copy-success-hidden {
+    font-size: 0.8rem;
+
+    }
 }

@@ -197,7 +197,7 @@ async function saveAndGo() {
     
     // Сначала пробуем отправить, если не вышло — ловим ошибку
     try {
-        const response = await fetch('http://127.0.0.1:8000/api/quizzes', {
+        const response = await fetch('/api/quizzes', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title: title, code: roomCode, questions: quizQuestions }),
@@ -214,3 +214,19 @@ async function saveAndGo() {
     }
 }
 
+// Запрет зума через жесты
+document.addEventListener('touchmove', function (event) {
+    if (event.scale !== 1) { 
+        event.preventDefault(); 
+    }
+}, { passive: false });
+
+// Запрет зума через двойной тап
+let lastTouchEnd = 0;
+document.addEventListener('touchend', function (event) {
+    const now = (new Date()).getTime();
+    if (now - lastTouchEnd <= 300) {
+        event.preventDefault();
+    }
+    lastTouchEnd = now;
+}, false);

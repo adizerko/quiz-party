@@ -474,6 +474,78 @@ function validateAndSend() {
   sendAnswer(val);
 }
 
+// Сама функция отправки
+function shareRoomLink() {
+    // ВАЖНО: Проверь, как у тебя называется переменная с кодом комнаты!
+    // Если она не глобальная, попробуй взять её из текста на экране:
+    const currentRoomCode = window.roomCode || document.getElementById('display-room-code').innerText;
+
+    if (!currentRoomCode || currentRoomCode === "123456") {
+        console.error("Код комнаты еще не готов");
+        return;
+    }
+
+    const shareUrl = `${window.location.origin}/index.html?room=${currentRoomCode}`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Quiz Party 🎉',
+            text: `Заходи в мою игру! Код: ${currentRoomCode}`,
+            url: shareUrl
+        }).catch(err => {
+            console.log("Share отклонен, копируем в буфер...");
+            fallbackCopyText(shareUrl);
+        });
+    } else {
+        fallbackCopyText(shareUrl);
+    }
+}
+
+function handleCopySequence() {
+    const area = document.getElementById('room-interactive-area');
+    const msg = document.getElementById('copy-success-msg');
+    const code = document.getElementById('display-room-code').innerText;
+
+    // 1. Копируем текст
+    const shareUrl = `${window.location.origin}/index.html?room=${code}`;
+    navigator.clipboard.writeText(shareUrl);
+
+    // 2. Анимация исчезновения кнопок и кода
+    area.classList.add('fade-out');
+
+    // 3. Показываем "Скопировано"
+    setTimeout(() => {
+        msg.classList.add('copy-success-visible');
+        
+        // 4. Через 2 секунды возвращаем всё назад
+        setTimeout(() => {
+            msg.classList.remove('copy-success-visible');
+            setTimeout(() => {
+                area.classList.remove('fade-out');
+            }, 300);
+        }, 2000);
+    }, 200);
+}
+
+// Добавляем проверку клика по самому тексту кода
+document.addEventListener('click', (e) => {
+    // Проверяем клик по зоне кода или кнопке копирования
+    if (e.target.closest('#copy-room-btn') || e.target.closest('#display-room-code')) {
+        e.preventDefault(); // Предотвращаем стандартное выделение текста
+        handleCopySequence();
+    }
+    
+    if (e.target.closest('#share-room-btn')) {
+        e.preventDefault();
+        if (navigator.share) {
+            shareRoomLink(); 
+        } else {
+            handleCopySequence();
+        }
+    }
+});
+
+
 // Точка входа модуля — инициализация страницы игры.
 window.onload = init;
 
