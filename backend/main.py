@@ -187,6 +187,7 @@ async def handle_sync(sid, data):
                 "maxReachedStep": quiz.current_step,
                 "isStarted": quiz.current_step >= 0 and not is_finished,
                 "isFinished": is_finished, # Передаем этот флаг
+                "questions": quiz.questions_data if is_finished else None, # Добавляем вопросы
                 "playerAnswer": player.answers_history.get(str(quiz.current_step)) if player and player.answers_history else None,
                 "score": player.score if player else 0,
                 "emoji": player.emoji if player else "👤"
@@ -194,12 +195,12 @@ async def handle_sync(sid, data):
 
             # Если игра закончена, СРАЗУ отправляем результаты обновившему страницу
             if is_finished:
-                players = db.query(models.Player).filter(
-                    models.Player.quiz_id == quiz.id, 
-                    models.Player.is_host == False
-                ).order_by(models.Player.score.desc()).all()
-                results = [{"name": p.name, "score": p.score, "emoji": p.emoji} for p in players]
-                await sio_manager.emit('show_results', {"results": results}, room=sid)
+                players = db.query(models.Player).filter(models.Player.quiz_id == quiz.id).order_by(models.Player.score.desc()).all()
+                results = [{"name": p.name, "score": p.score, "emoji": p.emoji, "answers": p.answers_history} for p in players]
+                await sio_manager.emit('show_results', {
+                "results": results,
+                "questions": quiz.questions_data # Передаем вопросы сюда тоже
+                }, room=sid)
             
             # Для хоста на обычном шаге шлем ответы
             elif player and player.is_host:
@@ -265,20 +266,26 @@ async def handle_finish(sid, data):
     try:
         quiz = db.query(models.Quiz).filter(models.Quiz.code == room).first()
         if quiz:
-            # Устанавливаем статус завершения в БД
             quiz.current_step = 999 
             db.commit()
 
-            # Собираем результаты
             players = db.query(models.Player).filter(
                 models.Player.quiz_id == quiz.id, 
                 models.Player.is_host == False
             ).order_by(models.Player.score.desc()).all()
             
-            results = [{"name": p.name, "score": p.score, "emoji": p.emoji} for p in players]
-            
-            # Рассылаем всем
-            await sio_manager.emit('show_results', {"results": results}, room=room)
+            results = [{
+                "name": p.name, 
+                "score": p.score, 
+                "emoji": p.emoji,
+                "answers": p.answers_history # Передаем историю ответов для разбора
+            } for p in players]
+
+            # Отправляем результаты вместе с данными вопросов
+            await sio_manager.emit('show_results', {
+                "results": results,
+                "questions": quiz.questions_data # Добавляем сами вопросы
+            }, room=room)
     finally:
         db.close()
 

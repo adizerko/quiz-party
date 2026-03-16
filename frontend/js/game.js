@@ -203,8 +203,21 @@ function sendAnswer(val) {
     }
 }
 
+// Функция для запуска анимации при клике
+function handleEmojiClick(element) {
+    const emoji = element.querySelector('.avatar-emoji');
+    if (emoji) {
+        // Добавляем класс анимации
+        emoji.classList.add('avatar-clicked');
+        
+        // Удаляем его через 500мс (длительность анимации), чтобы можно было кликнуть снова
+        setTimeout(() => {
+            emoji.classList.remove('avatar-clicked');
+        }, 500);
+    }
+}
+
 socket.on('update_players', (players) => {
-    // 1. Отрисовка списка в лобби (у хоста и игрока)
     const lobbyContainers = ['lobby-players-list', 'player-lobby-list'];
     
     lobbyContainers.forEach(id => {
@@ -213,21 +226,24 @@ socket.on('update_players', (players) => {
 
         container.innerHTML = players
             .filter(p => !p.is_host)
-            .map(p => `
-                <div class="player-card-lobby" style="
-                    display: flex; 
-                    flex-direction: column; 
-                    align-items: center; 
-                    background: rgba(255,255,255,0.7); 
-                    padding: 15px; 
-                    border-radius: 20px; 
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-                    animation: popIn 0.3s ease-out;
-                ">
-                    <div style="font-size: 2.5rem; margin-bottom: 5px;">${p.emoji || '👤'}</div>
-                    <div style="font-weight: 800; color: #2d3436; font-size: 0.9rem; text-align: center;">${p.name}</div>
-                </div>
-            `).join('');
+            .map(p => {
+                const isMe = p.name === playerName;
+                
+                // Важно: onclick добавлен здесь, а стили вынесены в классы
+                return `
+                    <div class="player-card-lobby ${isMe ? 'is-me' : ''}" onclick="handleEmojiClick(this)">
+                        ${isMe ? '<div class="me-badge">ВЫ</div>' : ''}
+                        
+                        <div class="avatar-emoji">
+                            ${p.emoji || '👤'}
+                        </div>
+                        
+                        <div class="player-name-label">
+                            ${p.name}
+                        </div>
+                    </div>
+                `;
+            }).join('');
     });
 });
 
@@ -338,6 +354,7 @@ socket.on("update_answers", (players) => {
 });
 
 socket.on('show_results', (data) => {
+    // 1. Переключаем экраны
     document.getElementById('host-screen').style.display = 'none';
     document.getElementById('player-screen').style.display = 'none';
     document.getElementById('finish-screen').style.display = 'block';
@@ -345,12 +362,18 @@ socket.on('show_results', (data) => {
     const resultsList = document.getElementById('final-results-list');
     if (!resultsList) return;
 
-    const players = data.results;
+    // Сохраняем вопросы глобально, чтобы при обновлении страницы они не пропадали
+    if (data.questions) window.allQuizQuestions = data.questions;
+    
+    const players = data.results || [];
+    const questions = window.allQuizQuestions || []; 
+    const myData = players.find(p => p.name === playerName);
+
     const maxScore = players.length > 0 ? players[0].score : 0;
     const winners = players.filter(p => p.score === maxScore && maxScore > 0);
     const others = players.filter(p => p.score !== maxScore || maxScore === 0);
 
-    resultsList.innerHTML = `
+    let html = `
         <div class="confetti-wrapper">
             <div style="margin-bottom: 20px; text-align: center;">
                 <span class="crown-appear">👑</span>
@@ -358,13 +381,13 @@ socket.on('show_results', (data) => {
             </div>
 
             ${winners.map(w => `
-                <div class="player-row-lobby winner-card-epic" style="padding: 15px 20px; justify-content: flex-start;">
+                <div class="player-row-lobby winner-card-epic" style="padding: 15px 20px; justify-content: flex-start; margin-bottom: 10px;">
                     <span class="player-emoji-icon" style="font-size: 3rem; margin-right: 15px;">${w.emoji}</span>
                     <div style="text-align: left; flex: 1;">
-                        <div style="font-size: 0.7rem; opacity: 0.6; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Победитель</div>
+                        <div style="font-size: 0.7rem; opacity: 0.6; font-weight: 700; text-transform: uppercase;">Победитель</div>
                         <div class="shiny-text-name" style="font-size: 1.4rem;">${w.name}</div>
                     </div>
-                    <div style="background: #FFD700; color: #000; padding: 5px 15px; border-radius: 15px; font-weight: 800; font-size: 1.2rem; margin-left: 10px;">
+                    <div style="background: #FFD700; color: #000; padding: 5px 15px; border-radius: 15px; font-weight: 800; font-size: 1.2rem;">
                         ${w.score}
                     </div>
                 </div>
@@ -380,13 +403,79 @@ socket.on('show_results', (data) => {
                             <span style="font-weight: 800; opacity: 0.3; width: 25px; font-size: 0.9rem;">#${i + 2}</span>
                             <span class="player-emoji-icon" style="font-size: 1.4rem; margin-right: 10px;">${p.emoji}</span>
                             <span class="player-name-lobby" style="flex: 1; text-align: left; font-size: 1rem; font-weight: 600;">${p.name}</span>
-                            <span style="font-weight: 700; opacity: 0.7; font-size: 1rem; background: rgba(0,0,0,0.04); padding: 3px 10px; border-radius: 10px;">${p.score}</span>
+                            <span style="font-weight: 700; opacity: 0.7; font-size: 1rem;">${p.score}</span>
                         </div>
                     `).join('')}
                 </div>
             </div>
         ` : ''}
+
+        <div style="margin-top: 30px; padding-bottom: 20px;">
+            <div onclick="
+                    const content = document.getElementById('review-content');
+                    const arrow = document.getElementById('acc-arrow');
+                    content.classList.toggle('active');
+                    arrow.style.transform = content.classList.contains('active') ? 'rotate(180deg)' : 'rotate(0deg)';
+                 " 
+                 style="background: rgba(67, 255, 242, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 15px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; -webkit-tap-highlight-color: transparent;">
+                <span style="font-weight: 800; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px; color: #2d3436;">Разбор вопросов 🔍</span>
+                <span id="acc-arrow" style="transition: transform 0.4s ease; font-size: 0.7rem; color: #2d3436;">▼</span>
+            </div>
+
+            <div id="review-content" class="accordion-content">
+                <div style="padding-top: 15px;">
+                    ${questions.map((q, i) => {
+                        const myAnswer = myData?.answers?.[i.toString()] || "—";
+                        const isCorrect = myAnswer.toLowerCase().trim() === q.correct.toLowerCase().trim();
+                        
+                        // Лента ответов других игроков
+                        const othersList = players
+                            .filter(p => p.name !== playerName)
+                            .map(p => {
+                                const ans = p.answers?.[i.toString()] || "—";
+                                const isAnsCorr = ans.toLowerCase().trim() === q.correct.toLowerCase().trim();
+                                return `
+                                    <div style="display: inline-flex; flex-direction: column; background: rgba(241, 117, 255, 0.08); padding: 8px 12px; border-radius: 12px; margin-right: 8px; min-width: 130px; max-width: 220px; border: 1px solid rgba(255,255,255,0.5);">
+                                        <span style="font-size: 0.6rem; opacity: 0.6; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                            ${p.emoji} ${p.name}
+                                        </span>
+                                        <span style="font-size: 0.85rem; font-weight: 700; color: ${isAnsCorr ? '#00b894' : '#2d3436'}; word-break: break-word; line-height: 1.2;">
+                                            ${ans}
+                                        </span>
+                                    </div>`;
+                            }).join('');
+
+                        return `
+                        <div class="review-card" style="background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 18px; padding: 15px; margin-bottom: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); animation-delay: ${i * 0.05}s;">
+                            <div style="font-size: 0.65rem; opacity: 0.5; font-weight: 700; margin-bottom: 4px; text-transform: uppercase;">Вопрос ${i + 1}</div>
+                            <div style="font-weight: 700; font-size: 0.95rem; color: #2d3436; margin-bottom: 12px;">${q.text}</div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px;">
+                                <div style="background: rgba(67, 242, 128, 0.09); padding: 8px; border-radius: 10px;">
+                                    <div style="font-size: 0.55rem; opacity: 0.6; text-transform: uppercase; font-weight: 800;">Верно</div>
+                                    <div style="color: #00b894; font-weight: 800; font-size: 0.85rem;">${q.correct}</div>
+                                </div>
+                                <div style="background: rgba(255, 255, 255, 0.4); padding: 8px; border-radius: 10px; border: 1px solid ${isCorrect ? 'rgba(0, 184, 148, 0.2)' : 'rgba(255, 118, 117, 0.2)'}">
+                                    <div style="font-size: 0.55rem; opacity: 0.6; text-transform: uppercase; font-weight: 800;">Твой ответ</div>
+                                    <div style="color: ${isCorrect ? '#00b894' : '#d63031'}; font-weight: 800; font-size: 0.85rem;">${myAnswer}</div>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 10px;">
+                                <div style="font-size: 0.55rem; opacity: 0.4; text-transform: uppercase; font-weight: 800; margin-bottom: 6px; letter-spacing: 0.5px;">Другие игроки:</div>
+                                <div style="display: flex; overflow-x: auto; padding-bottom: 5px; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
+                                    ${othersList || '<span style="opacity: 0.5; font-size: 0.75rem;">—</span>'}
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        </div>
     `;
+
+    resultsList.innerHTML = html;
 });
 
 socket.on("move_to_next", (data) => {
