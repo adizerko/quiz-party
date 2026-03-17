@@ -10,7 +10,7 @@
 }
 
 body {
-    margin: 0;
+    margin: 2px;
     padding: 20px;
     font-family: 'Montserrat', sans-serif;
     background: var(--party-grad);
@@ -18,7 +18,6 @@ body {
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    overflow-x: hidden;
     position: relative;
 }
 
@@ -629,11 +628,6 @@ body::after {
     margin-bottom: 15px;
     box-shadow: 0 6px 18px rgba(0,0,0,0.05);
 }
-.score-row {
-    display: flex;
-    justify-content: space-between;
-    font-weight: 700;
-}
 
 #copy-room-btn {
     background: none;
@@ -963,7 +957,6 @@ body::after {
 #players-answers-grid {
     display: grid;
     /* На телефонах — 1 колонка, на экранах шире 700px — 2 колонки */
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
     gap: 5px;
     padding: 0px;
     width: 100%;
@@ -1022,10 +1015,7 @@ body::after {
 
 @media (max-width: 480px) {
     /* Уменьшаем отступы в контейнере */
-    #players-answers-grid {
-        gap: 5px; /* Карточки будут стоять ближе друг к другу */
-        padding: 8px;
-    }
+    
 
     .answer-card {
         padding: 8px 12px; /* Было 16px — уменьшили высоту */
@@ -1068,9 +1058,11 @@ body::after {
 
     .score-row {
         padding: 2px 5px; /* Было 12px — теперь строки тоньше */
-        font-size: 0.85rem; /* Шрифт компактнее */
-        margin-bottom: 4px; /* Расстояние между строками */
+        font-size: 0.65rem; /* Шрифт компактнее */
+        margin-bottom: 0.5px; /* Расстояние между строками */
         border-radius: 10px;
+        border: 1px solid rgba(108, 92, 231, 0.1);
+         /* Добавляем легкую тень для читаемости */
     }
 
     .leader-row {
@@ -1915,13 +1907,7 @@ body::after {
     }
 }
 
-body {
-    /* Сайт не станет уже 320 пикселей. Если экран меньше — появится горизонтальный скролл */
-    min-width: 350px; 
-    
-    /* Чтобы контент не прилипал к краям на узких экранах */
-    overflow-x: hidden; 
-}
+
 
 
 /* Контейнер для танцующего эмодзи победителя */

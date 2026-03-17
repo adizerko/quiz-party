@@ -528,7 +528,7 @@ input[name="correct-opt"]:checked::after {
     padding: 25px; /* Чуть уменьшил паддинг, чтобы скролл-бар не был слишком далеко */
     border-radius: 25px;
     width: 90%; 
-    max-width: 450px; 
+    max-width: 650px; 
     color: #333;
     
     /* === КРИТИЧНО ДЛЯ СКРОЛЛА === */
@@ -882,7 +882,7 @@ input[name="correct-opt"]:checked::after {
     /* Уменьшаем саму модалку */
     .modal-content, .library-content {
         width: 100% !important;
-        height: 85vh; /* Чуть выше на мобилках */
+        height: 80vh; /* Чуть выше на мобилках */
         border-radius: 20px 20px 0 0;
         position: fixed;
         bottom: 0;
