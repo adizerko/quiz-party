@@ -1,5 +1,5 @@
 body {
-    margin: auto; font-family: 'Montserrat', sans-serif;
+    margin: a; font-family: 'Montserrat', sans-serif;
     background: linear-gradient(135deg, #fdfcfe 0%, #e0c3fc 100%);
     min-height: 100vh;
 }
@@ -7,17 +7,19 @@ body {
 
 .main-container {
     width: 100%;
-    max-width: 622px; /* Ограничение сверху для красоты на ПК */
-    margin:auto;   /* Центрирование */
-    padding: 0 15px;  /* Боковые отступы внутри */
+    max-width: 600px; /* Было 622px, ставим больше */
+    margin: auto;
+    padding: 0 15px;  /* Небольшие отступы, чтобы не липло к краям экрана */
     box-sizing: border-box;
-    display: flex; justify-content: center; padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .party-card {
     background: rgba(255,255,255,0.9);
     padding: 30px; border-radius: 30px;
-    width: 100%; max-width: 500px;
+    width: 100%; max-width: 550px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     z-index: 10;
 }

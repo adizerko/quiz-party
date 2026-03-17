@@ -14,13 +14,14 @@ body {
     padding: 20px;
     font-family: 'Montserrat', sans-serif;
     background: var(--party-grad);
-    min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     justify-content: center;
     align-items: flex-start;
     overflow-x: hidden;
     position: relative;
 }
+
 
 
 /* Карточка игры — Glassmorphism */
@@ -205,6 +206,7 @@ body {
     padding: 10px;
     border-radius: 15px;
     margin-bottom: 15px;
+    border: 1px dashed #f2b3ff;
 }
 
 .score-row {
@@ -215,9 +217,12 @@ body {
 
 .leader-row {
     background: linear-gradient(90deg,#fff3cd,#ffe08a);
-    border-radius:8px;
+    border-radius:5px;
     font-weight:700;
+    border: 1px solid #a8aa8b;
 }
+
+
 .answer-info {
     flex: 1;
     min-width: 0;
@@ -600,7 +605,7 @@ body::after {
 /* --- НАЗВАНИЕ ВИКТОРИНЫ --- */
 #quiz-title-host,
 #quiz-title-player {
-    font-size: 2.5rem;
+    font-size: 2rem;
     font-weight: 800;
     margin-bottom: 10px;
     padding: 12px 16px;
@@ -628,11 +633,6 @@ body::after {
     display: flex;
     justify-content: space-between;
     font-weight: 700;
-}
-.leader-row {
-    background: linear-gradient(90deg,#fff3cd,#ffe08a);
-    border-radius:8px;
-    font-weight:700;
 }
 
 #copy-room-btn {
@@ -1154,6 +1154,10 @@ body::after {
         height: 26px !important; /* Было 32px */
         font-size: 0.75rem;      /* Шрифт цифр чуть меньше */
         border-radius: 6px;      /* Пропорционально скругляем углы */
+    }
+
+    #quiz-title-host, #quiz-title-player {
+        font-size: 1.5rem;
     }
 
     /* Активный шаг */
