@@ -2,6 +2,23 @@
     padding: 50px 30px !important;
 }
 
+.main-container {
+    width: 100%;
+    max-width: 600px;
+    margin: auto;
+    padding: 0 15px;
+    box-sizing: border-box;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    min-height: 100vh;
+
+    justify-content: center; /* центр по вертикали */
+    transform: translateY(-80px); /* чуть выше центра */
+}
+
 .logo-area {
     position: relative;
     margin-bottom: 40px; /* Немного уменьшили отступ, так как нет логотипа */
