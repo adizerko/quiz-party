@@ -7,7 +7,7 @@
     border: 1px solid rgba(255, 255, 255, 0.5);
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
     border-radius: 40px;
-    padding: 40px;
+    padding: 20px;
 }
 
 .header-nav {
@@ -487,9 +487,19 @@ input[name="correct-opt"]:checked::after {
 }
 
 .modal-overlay {
-    display: none; position: fixed; top: 0; left: 0; 
-    width: 100%; height: 100%; background: rgba(0,0,0,0.8);
-    z-index: 10000; justify-content: center; align-items: center;
+    display: none; 
+    position: fixed; 
+    top: 0; left: 0; 
+    width: 100%; height: 100%; 
+    background: rgba(0,0,0,0.8);
+    z-index: 10000; 
+    justify-content: center; 
+    align-items: center;
+    
+    /* === ДОБАВЛЕНО ДЛЯ ЗАЩИТЫ ОТ ШАПКИ === */
+    box-sizing: border-box;
+    /* Отступ сверху равен высоте "челки" или минимум 20px */
+    padding: env(safe-area-inset-top, 20px) 10px env(safe-area-inset-bottom, 20px) 10px;
 }
 
 .close-modal {
@@ -514,8 +524,17 @@ input[name="correct-opt"]:checked::after {
 }
 
 .modal-content {
-    background: white; padding: 30px; border-radius: 25px;
-    width: 90%; max-width: 450px; color: #333;
+    background: white; 
+    padding: 25px; /* Чуть уменьшил паддинг, чтобы скролл-бар не был слишком далеко */
+    border-radius: 25px;
+    width: 90%; 
+    max-width: 450px; 
+    color: #333;
+    
+    /* === КРИТИЧНО ДЛЯ СКРОЛЛА === */
+    max-height: 85vh; /* Модалка не может быть больше 85% высоты экрана */
+    display: flex;
+    flex-direction: column; /* Заголовок сверху, контент снизу */
 }
 
 @keyframes modalPop {
@@ -527,10 +546,24 @@ input[name="correct-opt"]:checked::after {
 .modal-header h2 { color: #6c5ce7; margin: 0; font-size: 1.4rem; }
 .close-modal { background: #eee; border: none; width: 35px; height: 35px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; }
 
+/* Контейнер со списком вопросов */
 .library-items-container {
-    overflow-y: auto; flex-grow: 1;
-    padding: 10px 5px; margin-top: 5px;
-    clip-path: inset(-15px 0px 0px 0px); 
+    flex-grow: 1;      /* Занимает всё оставшееся место */
+    overflow-y: auto;  /* Скролл появляется ТОЛЬКО здесь и ТОЛЬКО если нужен */
+    padding-right: 5px; /* Место для скроллбара, чтобы не перекрывал контент */
+}
+
+/* Красивый скроллбар для Webkit (Chrome/Safari/Telegram Webview) */
+.library-items-container::-webkit-scrollbar {
+    width: 5px;
+}
+
+.library-items-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+.library-items-container::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
 }
 
 .library-item {
@@ -558,14 +591,40 @@ input[name="correct-opt"]:checked::after {
 }
 .library-tag i { margin-right: 6px; font-size: 0.8rem; color: #6c5ce7; }
 
+/* Блок с кнопками фильтра */
 .library-filter {
-    display: flex; gap: 8px; margin-bottom: 20px; position: relative;
-    z-index: 10; background: white; padding-bottom: 5px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;  /* Чтобы кнопки переносились, если не влезают по ширине */
+    flex-shrink: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0,0,0,0.05); /* Легкая разделительная линия */
 }
+
 .filter-btn {
-    padding: 8px 16px; border-radius: 12px; border: 1px solid #ddd;
-    background: white; cursor: pointer; font-family: 'Montserrat', sans-serif;
-    font-weight: 600; font-size: 0.8rem;
+    /* ЗАПРЕТ СЖАТИЯ — ЭТО ГЛАВНОЕ */
+    flex: 0 0 auto !important; 
+    
+    /* Текст не должен переноситься */
+    white-space: nowrap !important; 
+    
+    /* Минимальная ширина, чтобы "Все" не была слишком маленькой */
+    min-width: fit-content !important;
+    width: auto !important;
+    
+    padding: 8px 16px !important;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+    background: #f1f2f6;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    /* Центрируем текст внутри */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 .filter-btn.active { background: #6c5ce7; color: white; border-color: #6c5ce7; }
 
@@ -710,7 +769,6 @@ input[name="correct-opt"]:checked::after {
     text-align: left; 
     padding-left: 5px;
     transition: opacity 0.25s ease, transform 0.25s ease; 
-  
 }
 
 .idea-inserted {
@@ -775,6 +833,23 @@ input[name="correct-opt"]:checked::after {
     width: 100%;
 }
 
+/* Общий контейнер модалки */
+.modal-content, .library-content {
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh; /* Максимальная высота */
+    height: 80vh;     /* Фиксированная высота, чтобы не прыгало */
+    overflow: hidden; /* Важно: сама модалка не должна скроллиться */
+    padding: 20px;
+    box-sizing: border-box; /* Чтобы padding не раздувал ширину */
+}
+
+/* Шапка модалки (Заголовок + Кнопки) */
+.library-header {
+    flex-shrink: 0;   /* Запрещаем сжиматься */
+    margin-bottom: 15px;
+}
+
 /* =========================================
    10. МОБИЛЬНАЯ АДАПТАЦИЯ (MAX-WIDTH: 480PX)
 ========================================= */
@@ -804,4 +879,76 @@ input[name="correct-opt"]:checked::after {
     
     .header-nav { margin-bottom: 0; }
     .btn-back { font-size: 0.75rem; padding: 5px 10px; }
+    /* Уменьшаем саму модалку */
+    .modal-content, .library-content {
+        width: 100% !important;
+        height: 85vh; /* Чуть выше на мобилках */
+        border-radius: 20px 20px 0 0;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        padding: 15px;
+    }
+
+    .modal-header {
+        margin-bottom: 12px;
+    }
+
+    .modal-header h2 {
+        font-size: 1.1rem;
+    }
+
+    .close-modal {
+        width: 30px;
+        height: 30px;
+        font-size: 1.2rem;
+    }
+
+    /* Компактные фильтры со скроллом (если не влезут) */
+    .library-filter {
+        gap: 5px;
+        margin-bottom: 5px;
+    }
+    
+    /* Сами кнопки фильтров */
+    .filter-btn {
+        font-size: 13px !important;
+        padding: 6px 12px !important;
+        min-width: 60px !important; /* Чтобы кнопка "Все" имела вес */
+    }
+
+    .filter-btn.active {
+        background: #6c5ce7;
+        color: white;
+        border-color: #6c5ce7;
+
+    }
+
+    /* Скрываем полосу прокрутки, чтобы не портила вид */
+    .library-filter::-webkit-scrollbar {
+        display: none !important;
+        height: 0 !important;
+    }
+
+    /* Уменьшаем карточки вопросов */
+    .library-item {
+        padding: 12px;
+        border-radius: 14px;
+        margin-bottom: 8px;
+    }
+
+    .library-item b {
+        font-size: 0.85rem;
+        margin-bottom: 5px;
+    }
+
+    .library-tag {
+        font-size: 0.65rem;
+        margin-bottom: 5px;
+    }
+
+    .library-answer-preview {
+        font-size: 0.7rem;
+        padding: 3px 8px;
+    }
 }

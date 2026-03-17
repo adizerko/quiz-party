@@ -462,38 +462,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function toggleLibrary() {
     const modal = document.getElementById('library-modal');
+    const body = document.body;
     const isVisible = modal.style.display === 'flex';
-    modal.style.display = isVisible ? 'none' : 'flex';
-    if (!isVisible) filterLibrary('all');
+    
+    if (isVisible) {
+        modal.style.display = 'none';
+        body.classList.remove('modal-open'); // Включаем скролл сайта обратно
+    } else {
+        modal.style.display = 'flex';
+        body.classList.add('modal-open');    // Отключаем скролл сайта
+        filterLibrary('all');
+    }
 }
 
 function filterLibrary(category) {
     const container = document.getElementById('library-list');
     if (!container) return;
-    
-    // 1. Очищаем список перед новой отрисовкой
-    container.innerHTML = "";
-    
-    // 2. Подсветка кнопок фильтров (Все / Юмор / О нас)
+
+    // 1. Переключаем подсветку кнопок
     document.querySelectorAll('.filter-btn').forEach(btn => {
-        const btnText = btn.innerText.toLowerCase();
-        const isActive = (category === 'all' && btnText.includes('все')) ||
-                         (category === 'funny' && btnText.includes('юмор')) ||
-                         (category === 'friends' && btnText.includes('о нас'));
-        btn.classList.toggle('active', isActive);
+        // Проверяем совпадение атрибута data-category с выбранной категорией
+        if (btn.getAttribute('data-category') === category) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
     });
 
-    // 3. Фильтруем массив вопросов
+    // 2. Очищаем список
+    container.innerHTML = "";
+
+    // 3. Фильтруем и отрисовываем вопросы
     const filtered = category === 'all' 
         ? questionsLibrary 
         : questionsLibrary.filter(q => q.cat === category);
 
-    // 4. Отрисовываем карточки
     filtered.forEach(q => {
         const item = document.createElement('div');
         item.className = 'library-item';
         
-        // Определяем иконку и текст типа как в основном интерфейсе
         const typeMarkup = q.type === 'text' 
             ? `<i class="fa-solid fa-pen"></i> Текст` 
             : `<i class="fa-solid fa-circle-dot"></i> Выбор`;
@@ -514,6 +521,9 @@ function filterLibrary(category) {
         };
         container.appendChild(item);
     });
+
+    // Скроллим список вверх при смене категории
+    container.scrollTop = 0;
 }
 
 function importQuestion(q) {

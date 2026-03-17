@@ -22,12 +22,6 @@ body {
     position: relative;
 }
 
-.main-container {
-    width: 95%;            /* Занимает почти всю ширину на маленьких экранах */
-    max-width: 850px;      /* Существенно расширяем для десктопа/планшетов */
-    margin: 20px auto;     /* Центрируем контейнер */
-    margin-top: 40px;
-}
 
 /* Карточка игры — Glassmorphism */
 .party-card {
@@ -460,12 +454,7 @@ body::after {
     100% { transform: translateY(0px) rotate(360deg);}
 }
 
-/* --- КОНТЕЙНЕР --- */
-.main-container {
-    width: 100%;
-    max-width: 500px;
-    margin-top: 40px;
-}
+
 
 /* --- КНОПКИ --- */
 .btn-party-main, .btn-party-direct {
@@ -1930,13 +1919,6 @@ body {
     overflow-x: hidden; 
 }
 
-.main-container {
-    width: 100%;
-    max-width: 500px; /* Ограничение сверху для красоты на ПК */
-    margin: 0 auto;   /* Центрирование */
-    padding: 0 15px;  /* Боковые отступы внутри */
-    box-sizing: border-box;
-}
 
 /* Контейнер для танцующего эмодзи победителя */
 .winner-emoji-container {
