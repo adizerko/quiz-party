@@ -29,8 +29,17 @@
 
             <div class="creation-zone">
                 <div class="input-group">
-                    <label>Твой вопрос:</label>
-                    <input type="text" id="q-input-text" placeholder="Кто тут самый крутой?" maxlength="70">
+                    <label>Твой вопрос</label>
+                    <input type="text" id="questionInput" placeholder="Например: В каком году вышел первый iPhone?">
+                    
+                    <div class="idea-wrapper" style="display: flex; align-items: center; gap: 8px;">
+                        <div id="idea-container" class="idea-container" style="flex-grow: 1;">
+                            <i class="fas fa-lightbulb idea-icon"></i> Идея: <span id="random-idea-text">Загрузка...</span>
+                        </div>
+                        <button id="refresh-idea" class="refresh-btn" title="Другой вопрос">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="input-group">

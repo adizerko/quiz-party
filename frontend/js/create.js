@@ -1,14 +1,74 @@
 let quizQuestions = [];
-let editIndex = -1; // Индекс редактируемого вопроса
+let editIndex = -1;
+let globalQuestionsLibrary = []; // Сюда загрузим данные из JSON
 
 // В самом начале файла можно сразу задать состояние
 document.addEventListener('DOMContentLoaded', () => {
-    if (document.getElementById('q-input-type')) {
-        clearForm();
+    // 1. Расширенная база: Вопрос + Ответ
+    const questionIdeas = [
+        { q: "Какая самая большая планета?", a: "Юпитер" },
+        { q: "Сколько океаноПервый человловек в космосе?Первый чеек в космосе?в на Земле?", a: "5" },
+        { q: "Столица ФранцПервый человек в космосе?Первый человек в космосе?Первыйелов космосе?", a: "Юрий Гагарин" },
+        { q: "Квадратный корень из 144?", a: "12" },
+        { q: "Самое глубокое озеро?", a: "Байкал" },
+        { q: "В каком году был 2000 год?", a: "В 2000" }
+    ];
+
+    const ideaTextElement = document.getElementById('random-idea-text');
+    const ideaContainer = document.getElementById('idea-container');
+    const refreshBtn = document.getElementById('refresh-idea');
+    const questionInput = document.getElementById('questionInput');
+    
+    // Ищем первый инпут в зоне вариантов (обычно это правильный ответ)
+    const firstOptionInput = document.querySelector('.opt-input');
+
+    let currentIdea = null;
+
+    function changeIdea() {
+        ideaTextElement.classList.remove('idea-fade');
+        void ideaTextElement.offsetWidth; 
+        ideaTextElement.classList.add('idea-fade');
+
+        const randomIndex = Math.floor(Math.random() * questionIdeas.length);
+        currentIdea = questionIdeas[randomIndex];
+        ideaTextElement.textContent = currentIdea.q;
     }
 
-    const listZone = document.querySelector('.list-zone');
-    if (listZone) listZone.style.display = "none";
+    // Авто-смена каждые 6 секунд
+    let autoRefresh = setInterval(changeIdea, 6000);
+
+    // Кнопка ручного обновления
+    refreshBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        clearInterval(autoRefresh); // Сбрасываем таймер, чтобы текст не прыгнул сразу после клика
+        changeIdea();
+        autoRefresh = setInterval(changeIdea, 6000); // Запускаем заново
+    });
+
+    // Клик по идее — вставляем и вопрос, и ответ
+    ideaContainer.addEventListener('click', () => {
+        if (!currentIdea) return;
+
+        // Вставляем вопрос
+        questionInput.value = currentIdea.q;
+        
+        // Вставляем ответ в первое поле (если оно есть)
+        if (firstOptionInput) {
+            firstOptionInput.value = currentIdea.a;
+            
+            // Если у тебя первый вариант по умолчанию правильный, 
+            // имитируем выбор радиокнопки для красоты
+            const firstRadio = document.querySelector('input[name="correct-opt"]');
+            if (firstRadio) firstRadio.checked = true;
+        }
+
+        // Эффект вспышки для привлечения внимания
+        questionInput.style.background = "#f0f7ff";
+        setTimeout(() => questionInput.style.background = "white", 300);
+    });
+
+    // Инициализация первой идеи
+    changeIdea();
 });
 
 function showToast(message) {

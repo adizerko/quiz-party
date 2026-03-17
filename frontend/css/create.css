@@ -486,6 +486,169 @@ input[name="correct-opt"]:checked::after {
 .filter-btn.active { background: #6c5ce7; color: white; border-color: #6c5ce7; }
 
 /* =========================================
+   ИДЕИ ВОПРОСОВ (ПОДСКАЗКА ПОД ИНПУТОМ)
+========================================= */
+
+/* Блок идеи */
+.idea-container {
+    /* Гибкость и размеры */
+    flex: 1;
+    height: auto;               /* Разрешаем расти в высоту */
+    min-height: 36px;           /* Достаточно узкая, но удобная для клика */
+    box-sizing: border-box;
+    
+    /* Выравнивание */
+    display: flex;
+    align-items: center;        /* Центровка иконки и текста по вертикали */
+    justify-content: flex-start; /* Прижимаем содержимое к левому краю */
+    
+    /* Красивый дизайн из первого варианта */
+    background: rgba(108, 92, 231, 0.08);
+    border-radius: 12px;
+    border: 1px solid transparent; 
+    color: #6c5ce7;
+    cursor: pointer;
+    transition: all 0.2s ease;  /* Плавность при наведении */
+    
+    /* Отступы и текст */
+    padding: 8px 15px;          /* Оптимальный баланс */
+    gap: 8px;                   /* Расстояние между иконкой, "Идея:" и текстом */
+    font-size: 13px;            /* Чуть компактнее */
+    font-weight: 600;
+    line-height: 1.3;           /* Чтобы перенос строк выглядел аккуратно */
+}
+
+.idea-container {
+    display: flex;
+    align-items: center;      /* Центровка иконки и текста по вертикали */
+    justify-content: flex-start; /* ВСЁ строго влево */
+    
+    /* Высота */
+    height: auto;             /* Разрешаем расти вверх */
+    min-height: 32px;         /* Минимальная высота (сделай меньше, если нужно еще уже) */
+    
+    /* Отступы */
+    padding: 6px 12px;        /* Верх/низ поменьше, чтобы уменьшить высоту */
+    gap: 6px;                 /* Расстояние между иконкой, словом "Идея" и вопросом */
+    
+    /* Текст */
+    font-size: 13px;          /* Общий размер для "Идея:" и вопроса */
+    line-height: 1.3;         /* Чтобы строки при переносе не слипались */
+}
+
+#idea-container {
+    font-size: 10px; /* Или 0.8rem */
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* Сдвигает всё влево */
+    gap: 5px; /* Расстояние между иконкой, словом и вопросом */
+    padding-left: 10px;
+}
+
+.idea-container:hover {
+    background: rgba(108, 92, 231, 0.15);
+    border-color: rgba(108, 92, 231, 0.2);
+}
+
+.idea-icon {
+    color: #f1c40f; /* Желтый цвет лампочки */
+    font-size: 0.9rem;
+}
+
+/* Анимация для смены текста */
+.idea-fade {
+    animation: ideaFadeIn 0.5s ease forwards;
+}
+
+@keyframes ideaFadeIn {
+    0% { opacity: 0; transform: translateY(2px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+.idea-wrapper {
+    margin-top: -5px;
+    margin-bottom: 15px;
+}
+
+/* 3. Кнопка обновления */
+.refresh-btn {
+    width: 36px;         /* Ширина = высоте */
+    height: 36px;        /* Высота СТРОГО как у плашки выше */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 1px solid rgba(108, 92, 231, 0.2); /* Реальная рамка */
+    border-radius: 12px;
+    color: #6c5ce7;
+    cursor: pointer;
+    padding: 0;          /* Сбрасываем внутренние отступы */
+    margin: 0;           /* Сбрасываем внешние отступы */
+    box-sizing: border-box; /* ГАРАНТИРУЕТ, что 1px рамки входит в эти 42px высоты */
+    transition: all 0.2s ease;
+}
+
+.refresh-btn:hover {
+    border-color: #6c5ce7;
+    background: #f8f7ff;
+}
+
+/* Центрируем иконку внутри кнопки */
+/* Состояние иконки внутри кнопки */
+.refresh-btn i {
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); /* Мягкая анимация вращения */
+}
+
+/* 1. Анимация при наведении: поворот на 180 градусов */
+.refresh-btn:hover i {
+    transform: rotate(180deg);
+    color: #6c5ce7; /* Опционально: меняем цвет на брендовый */
+}
+
+/* Анимация появления текста */
+.idea-fade {
+    animation: ideaFadeIn 0.4s ease forwards;
+}
+
+@keyframes ideaFadeIn {
+    0% { opacity: 0; transform: translateY(3px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+#random-idea-text {
+    display: block;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    line-height: 1.2;
+    max-width: 100%;
+    font-size: 0.65rem; 
+    text-align: left; 
+    padding-left: 5px; 
+  
+}
+
+/* 2. Анимация при нажатии: небольшой щелчок или доворот */
+.refresh-btn:active i {
+    transform: rotate(360deg); /* При клике делает полный оборот */
+    transition: transform 0.2s ease; /* Нажатие должно быть быстрым */
+}
+
+/* Опционально: легкая пульсация самой кнопки при нажатии */
+.refresh-btn:active {
+    transform: scale(0.9);
+}
+
+/* 1. Контейнер: жестко центрируем всё содержимое */
+.idea-row {
+    display: flex;
+    align-items: center; /* Центровка по вертикальной оси */
+    gap: 8px;            /* Расстояние между ними */
+    margin: 10px 0 20px;
+    width: 100%;
+}
+
+/* =========================================
    10. МОБИЛЬНАЯ АДАПТАЦИЯ (MAX-WIDTH: 480PX)
 ========================================= */
 @media screen and (max-width: 480px) {
