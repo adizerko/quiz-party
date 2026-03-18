@@ -27,40 +27,43 @@
             <div id="quiz-title-host" class="quiz-title"></div>
         </div>
 
-        <div id="host-lobby">
-
-            <h1 class="party-title shiny-waiting">
-            🎈 Ждём гостей 🎉
-            </h1>
-            
-            <div class="room-share-container">
-                <p class="room-label">Код комнаты</p>
-                <div id="room-interactive-area" class="room-code-wrapper">
-                    <button id="share-room-btn" class="icon-only-btn" title="Поделиться">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-                    </button>
-
-                    <div class="code-inner-container">
-                        <span id="display-room-code">PARTY-YL08</span>
-                        <span id="copy-success-msg" class="copy-text-node">Скопировано! ✨</span>
+        <div id="host-lobby" style="display: block;">
+            <div class="lobby-main-card">
+                <div class="lobby-header-section">
+                    <h1 class="party-title shiny-waiting">🎈 Ждём гостей 🎉</h1>
+                     
+                    <div class="room-share-group">
+                        <p class="room-label">Код комнаты</p>
+                        <div id="room-interactive-area" class="room-code-wrapper">
+                            <button id="share-room-btn" class="icon-only-btn" title="Поделиться">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                            </button>
+                            <div class="code-inner-container">
+                                <span id="display-room-code">PARTY-9Z82</span>
+                                <span id="copy-success-msg" class="copy-text-node">Скопировано! ✨</span>
+                            </div>
+                            <button id="copy-room-btn" class="icon-only-btn" title="Копировать">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            </button>
+                        </div>
                     </div>
+                </div>
 
-                    <button id="copy-room-btn" class="icon-only-btn" title="Копировать">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <div class="players-section">
+                    <div class="players-party-container host-variant">
+                        <span class="mini-label">УЧАСТНИКИ</span>
+                        <div id="lobby-players-list" class="party-avatars-grid"></div>
+                    </div>
+                </div>
+
+                <div class="lobby-footer-section">
+                    <button onclick="startGame()" class="btn-party-direct">
+                        ПОГНАЛИ 🚀
                     </button>
                 </div>
             </div>
-
-            <div class="players-party-container host-variant">
-                <span class="mini-label">УЧАСТНИКИ</span>
-                <div id="lobby-players-list" class="party-avatars-grid"></div>
-            </div>
-
-            <button onclick="startGame()" class="btn-party-direct" style="margin-top:20px;">
-                ПОГНАЛИ 🚀
-            </button>
-
         </div>
+
         <div id="host-game-area" style="display:none;">
             <div id="questions-progress"></div>
             <div id="scoreboard"></div>
@@ -87,14 +90,30 @@
             <div id="quiz-title-player" class="quiz-title"></div>
         </div>
         <div id="player-wait">
-            <span class="emoji-logo">🎈</span>
-            <h1 class="party-title">ТЫ В ИГРЕ!</h1>
-            <p class="party-subtitle">
-                Ждем, пока организатор начнет раунд...
-            </p>
-            <div class="players-party-container host-variant">
-                <span class="mini-label">В КОМНАТЕ</span>
-                <div id="player-lobby-list" class="party-avatars-grid"></div>
+            <div class="lobby-main-card">
+                <div class="lobby-header-section">
+                    <h1 class="party-title">ТЫ В ИГРЕ!</h1>
+                    <p class="party-subtitle">
+                        Ждем, пока организатор начнет раунд...
+                    </p>
+                </div>
+
+                <div class="players-section">
+                    <div class="players-party-container host-variant">
+                        <span class="mini-label">В КОМНАТЕ</span>
+                        <div id="player-lobby-list" class="party-avatars-grid">
+                            <div class="player-card-lobby is-me" onclick="handleEmojiClick(this)">
+                                <div class="me-badge">ВЫ</div>
+                                <div class="avatar-emoji">🐸</div>
+                                <div class="player-name-label">Макс</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="lobby-footer-hint">
+                    Приготовься, скоро начнется! 🔥
+                </div>
             </div>
         </div>
         <div id="player-game-area" style="display:none;">

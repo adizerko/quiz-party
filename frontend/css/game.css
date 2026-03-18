@@ -440,52 +440,52 @@ body {
 .room-code-wrapper {
     display: flex;
     align-items: center;
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(12px);
-    border: 1.5px solid rgba(108, 92, 231, 0.15);
+    justify-content: space-between; /* Распределяем кнопки по краям */
+    background: #ffffff;
+    border: 1px solid #e0e0ff;
     border-radius: 20px;
-    padding: 4px;
+    padding: 6px 10px;
     width: 100%;
-    max-width: 280px; /* Сделал чуть компактнее */
-    box-shadow: 0 8px 24px rgba(108, 92, 231, 0.08);
+    max-width: 300px;
+    margin: 0 auto;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
 }
 
 /* Контейнер для текста по центру */
 .code-inner-container {
-    flex: 1;
+    flex: 1; /* Занимает всё пространство между кнопками */
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 40px;
     position: relative;
     overflow: hidden;
+    height: 40px;
 }
 
 #display-room-code {
-    font-size: 1.2rem;
-    font-weight: 850;
-    letter-spacing: 1.5px;
-    /* Красивый градиент в твоем стиле */
-    background: #6c5ce7;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #6c5ce7;
+    letter-spacing: 1px;
+    /* Центрируем текст внутри его контейнера */
+    text-align: center; 
+    width: 100%;
 }
 
 /* Кнопки внутри блока */
 .icon-only-btn {
-    width: 42px;
-    height: 42px;
-    border-radius: 14px;
-    background: rgba(108, 92, 231, 0.08);
+    background: #f0f0ff;
     border: none;
-    color: var(--party-purple);
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    color: #6c5ce7;
+    flex-shrink: 0; /* Чтобы кнопки не сжимались */
+    margin: 0; /* Обнуляем отступы */
 }
 
 .icon-only-btn:hover {
@@ -524,6 +524,21 @@ body {
     transform: translateY(0);
 }
 
+/* Контейнер, где лежит надпись "код комнаты" и сама плашка */
+.room-share-group {
+    margin-bottom: 5px !important; /* Уменьшаем отступ до блока участников */
+}
+
+/* Подсказка внизу */
+.lobby-footer-hint {
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--party-purple);
+    opacity: 0.5;
+    margin-top: -25px;
+}
+
 
 /* ============================================
    5. ИГРОКИ И АВАТАРЫ
@@ -536,6 +551,7 @@ body {
     margin: 20px 0;
     width: 100%;
     box-sizing: border-box;
+    margin-top: 5px !important;
 }
 
 .players-party-container.host-variant {
@@ -1554,6 +1570,8 @@ body {
 .shiny-waiting {
     font-size: 1.2rem;
     font-weight: 800;
+    margin-top: -5px !important; /* Немного поднимаем весь блок */
+    margin-bottom: 20px !important; /* Увеличиваем дистанцию до кода, чтобы он не слипался с заголовком */
     text-align: center;
     letter-spacing: 1px;
     background: linear-gradient(90deg, #6c5ce7, #ff85a1, #6c5ce7);
@@ -1805,4 +1823,62 @@ body {
     .your-answer-preview {
         padding: 12px;
     }
+}
+
+/* ГЛАВНЫЙ КОНТЕЙНЕР ЛОББИ */
+.lobby-main-card {
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 30px;
+    padding: 24px 16px;
+    box-shadow: 0 15px 35px rgba(108, 92, 231, 0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+/* СЕКЦИИ КАРТОЧКИ */
+.lobby-header-section {
+    text-align: center;
+}
+
+/* КНОПКА ПОГНАЛИ */
+.btn-party-direct {
+    width: 100%;
+    padding: 16px;
+    border-radius: 18px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: linear-gradient(135deg, #6c5ce7, #8e44ad);
+    color: white;
+    border: none;
+    box-shadow: 0 8px 20px rgba(108, 92, 231, 0.3);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+}
+
+.btn-party-direct:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 12px 25px rgba(108, 92, 231, 0.4);
+}
+
+.btn-party-direct:active {
+    transform: scale(0.96);
+}
+
+/* МИНИ-МЕТКИ */
+.mini-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--party-purple);
+    opacity: 0.5;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+    display: block;
+    text-align: center;
 }
