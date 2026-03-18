@@ -249,7 +249,7 @@ input[name="correct-opt"]:checked::after {
 .empty-icon { font-size: 2rem; margin-bottom: 10px; }
 
 .party-scroll-list {
-    max-height: 320px;
+    max-height: 820px;
     overflow-y: auto;
     padding-right: 5px;
 }
@@ -958,7 +958,7 @@ input[name="correct-opt"]:checked::after {
     .opt-create-row input[type="radio"] { width: 20px; height: 20px; }
     
     .preview-options-grid { grid-template-columns: 1fr; gap: 4px; }
-    .preview-opt-item { padding: 5px 10px; font-size: 0.8rem; }
+    .preview-opt-item { padding: 0px 5px; font-size: 0.7rem; }
     
     .btn-party-add { padding: 12px; font-size: 0.9rem; }
     .btn-party-launch { padding: 15px; font-size: 1rem; border-radius: 15px; }
@@ -1040,5 +1040,9 @@ input[name="correct-opt"]:checked::after {
 
     .question-text{
         font-size: 0.75rem;
+    }
+
+    .question-card {
+        padding: 8px 10px;
     }
 }

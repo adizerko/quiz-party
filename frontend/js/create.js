@@ -442,28 +442,87 @@ function removeQuestion(index) {
 
 // Проверь saveAndGo, чтобы не было ошибок если сервер упал
 async function saveAndGo() {
-    const title = document.getElementById('quiz-title-input').value.trim();
-    if (!title) { showToast("Введите название вечеринки!"); return; }
-    if (quizQuestions.length === 0) { showToast("Добавьте хотя бы один вопрос!"); return; }
+    const titleInput = document.getElementById('quiz-title-input');
+    const title = titleInput.value.trim();
 
+    if (!title) { 
+        showToast("Введите название вечеринки!");
+        titleInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        titleInput.focus();
+        return;
+    }
+
+    if (quizQuestions.length === 0) { 
+        showToast("Добавьте хотя бы один вопрос!");
+        const questionInput = document.getElementById('q-input-text');
+        questionInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        questionInput.focus();
+        return;
+    }
+
+    // Проверка каждого вопроса на заполнение
+    for (let i = 0; i < quizQuestions.length; i++) {
+        const q = quizQuestions[i];
+        if (!q.text.trim()) {
+            showToast(`Вопрос №${i + 1} не заполнен!`);
+            renderQuestions(); // чтобы точно знать где вопрос
+            const questionRows = document.querySelectorAll('.question-row');
+            questionRows[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Фокус на инпут
+            const inputEl = document.getElementById('q-input-text');
+            inputEl.focus();
+            return;
+        }
+
+        if (q.type === 'text' && (!q.correct || !q.correct.trim())) {
+            showToast(`Вопрос №${i + 1}: укажите правильный ответ!`);
+            renderQuestions();
+            const questionRows = document.querySelectorAll('.question-row');
+            questionRows[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const inputEl = document.getElementById('q-input-correct');
+            inputEl.focus();
+            return;
+        }
+
+        if (q.type === 'options') {
+            if (!q.options || q.options.some(opt => !opt.trim())) {
+                showToast(`Вопрос №${i + 1}: заполните все варианты ответа!`);
+                renderQuestions();
+                const questionRows = document.querySelectorAll('.question-row');
+                questionRows[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                const firstEmpty = document.querySelector(`#opt-1, #opt-2, #opt-3, #opt-4`);
+                if (firstEmpty) firstEmpty.focus();
+                return;
+            }
+            if (!q.correct || !q.options.includes(q.correct)) {
+                showToast(`Вопрос №${i + 1}: выберите правильный вариант!`);
+                renderQuestions();
+                const questionRows = document.querySelectorAll('.question-row');
+                questionRows[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                const radios = document.querySelectorAll('input[name="correct-opt"]');
+                if (radios.length) radios[0].focus();
+                return;
+            }
+        }
+    }
+
+    // Если все проверки прошли, создаем комнату
     const roomCode = 'PARTY-' + Math.random().toString(36).substr(2, 4).toUpperCase();
-    
-    // Сначала пробуем отправить, если не вышло — ловим ошибку
+
     try {
         const response = await fetch('/api/quizzes', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title: title, code: roomCode, questions: quizQuestions }),
         });
-        
+
         if (response.ok) {
-            // Очистка кеша перед запуском игры
             localStorage.removeItem('quizQuestions');
             localStorage.removeItem('quizTitle');
-
+            localStorage.removeItem('quizDraft');
             window.location.href = `game.html?role=host&room=${roomCode}`;
         } else {
-             showToast("Сервер не принял данные");
+            showToast("Сервер не принял данные");
         }
     } catch (e) {
         console.error("Server error:", e);
