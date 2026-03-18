@@ -332,10 +332,10 @@ input[name="correct-opt"]:checked::after {
 .clear-input {
     position: absolute;
     top: 50%;
-    right: 5px;
+    right: 10px;
     transform: translateY(-50%);
     cursor: pointer;
-    font-size: 16px;
+    font-size: 20px;
     color: #888;
     display: none; /* скрыт по умолчанию */
     user-select: none;
