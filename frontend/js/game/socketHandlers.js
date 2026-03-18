@@ -460,7 +460,7 @@ socket.on("sync_state", (data) => {
                             </div>
 
                             <div class="waiting-loader">
-                                <div class="pulse-dot" style="display:inline-block; margin-right:8px;"></div>
+                                <div class="pulse-dot"></div>
                                 <span>Ждем остальных игроков...</span>
                             </div>
                         </div>
