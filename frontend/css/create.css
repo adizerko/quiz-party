@@ -306,7 +306,7 @@ input[name="correct-opt"]:checked::after {
     min-width: 0;
     font-weight: 700;
     font-size: 0.85rem;
-    color: #2d3436;
+    color: #6c5ce7;
     line-height: 1.2;
     word-break: break-word;
     overflow-wrap: break-word;
@@ -950,5 +950,9 @@ input[name="correct-opt"]:checked::after {
     .library-answer-preview {
         font-size: 0.7rem;
         padding: 3px 8px;
+    }
+
+    .question-text{
+        font-size: 0.75rem;
     }
 }

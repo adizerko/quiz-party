@@ -736,7 +736,7 @@ body {
     border-radius: 0; /* Убираем скругления для списка с разделителями */
     box-shadow: none;
     margin-bottom: 0;
-    padding: 12px 15px; /* Чуть больше воздуха по вертикали */
+    padding: 10px 15px; /* Чуть больше воздуха по вертикали */
 }
 
 /* Убираем линию у последнего игрока в списке */
@@ -898,6 +898,11 @@ body {
 .scoreboard-card.rank-1st .scoreboard-score {
     color: #FFB700;
     font-weight: 700;
+}
+
+.scoreboard-card.rank-2nd {
+    background: linear-gradient(135deg, rgba(205, 204, 202, 0.523) 0%, rgba(207, 203, 198, 0.167) 100%);
+    border: 1px solid rgba(205, 127, 50, 0.15);
 }
 
 .scoreboard-card.rank-3rd {
@@ -2182,6 +2187,10 @@ body {
 
     .copy-text-node {
         font-size: 0.6rem;
+    }
+
+    .player-row-lobby.is-rating-row {
+    padding: 5px 25px; /* Чуть больше воздуха по вертикали */
     }
 }
 
