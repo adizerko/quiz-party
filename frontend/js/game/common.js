@@ -263,6 +263,7 @@ function jumpToQuestion(step) {
 
 /**
  * Рисует турнирную таблицу очков игроков на экране хоста.
+ * Обновляет только измененные элементы, не перерисовывая всю таблицу.
  * @param {{name: string, score: number, is_host: boolean, emoji: string}[]} players
  */
 function renderScoreboard(players) {
@@ -273,20 +274,91 @@ function renderScoreboard(players) {
     .filter((p) => !p.is_host)
     .sort((a, b) => (b.score || 0) - (a.score || 0));
 
-  const maxScoreLocal = sorted.length > 0 ? sorted[0].score : 0;
+  if (sorted.length === 0) {
+    board.innerHTML = '<div class="scoreboard-empty">Ожидаем первых ответов...</div>';
+    return;
+  }
 
-  board.innerHTML = sorted
-    .map((p, i) => {
-      const isLeader = p.score === maxScoreLocal && maxScoreLocal > 0;
+  const medals = ['🥇', '🥈', '🥉'];
+  
+  // Если таблица пуста (первый раз), создаем полностью
+  if (board.children.length === 0 || board.querySelector(".scoreboard-empty")) {
+    board.innerHTML = sorted
+      .map((p, i) => {
+        const rankEmoji = i < 3 ? medals[i] : (i + 1);
+        const isLeader = i === 0;
+        const rankClass = i === 0 ? 'rank-1st' : i === 1 ? 'rank-2nd' : i === 2 ? 'rank-3rd' : 'rank-other';
+        const playerEmoji = p.emoji || '👤';
 
-      return `
-        <div class="score-row ${isLeader ? "leader-row" : ""}">
-            <span>${isLeader ? "👑" : i + 1 + "."} ${p.name}</span>
-            <span>${p.score || 0} 🏆</span>
-        </div>
+        return `
+          <div class="scoreboard-card ${rankClass} ${isLeader ? 'is-leader' : ''}" data-player="${p.name}" style="animation: scoreboardSlideIn 0.5s ease-out ${i * 0.1}s both;">
+            <div class="scoreboard-rank">${rankEmoji}</div>
+            <div class="scoreboard-emoji">${playerEmoji}</div>
+            <div class="scoreboard-info">
+              <div class="scoreboard-name">${p.name}</div>
+              <div class="scoreboard-score">${p.score || 0}🏆</div>
+            </div>
+            ${isLeader ? '<div class="scoreboard-crown">⭐</div>' : ''}
+          </div>
         `;
-    })
-    .join("");
+      })
+      .join("");
+    return;
+  }
+
+  // Иначе обновляем только измененные элементы
+  const existingCards = board.querySelectorAll(".scoreboard-card");
+  
+  sorted.forEach((p, i) => {
+    const rankEmoji = i < 3 ? medals[i] : (i + 1);
+    const isLeader = i === 0;
+    const rankClass = i === 0 ? 'rank-1st' : i === 1 ? 'rank-2nd' : i === 2 ? 'rank-3rd' : 'rank-other';
+    
+    let card = board.querySelector(`[data-player="${p.name}"]`);
+    
+    if (!card) {
+      // Новый игрок - добавляем в конец
+      const playerEmoji = p.emoji || '👤';
+      const newCard = document.createElement("div");
+      newCard.className = `scoreboard-card ${rankClass} ${isLeader ? 'is-leader' : ''}`;
+      newCard.setAttribute("data-player", p.name);
+      newCard.innerHTML = `
+        <div class="scoreboard-rank">${rankEmoji}</div>
+        <div class="scoreboard-emoji">${playerEmoji}</div>
+        <div class="scoreboard-info">
+          <div class="scoreboard-name">${p.name}</div>
+          <div class="scoreboard-score">${p.score || 0}🏆</div>
+        </div>
+        ${isLeader ? '<div class="scoreboard-crown">⭐</div>' : ''}
+      `;
+      board.appendChild(newCard);
+    } else {
+      // Обновляем существующего игрока
+      card.className = `scoreboard-card ${rankClass} ${isLeader ? 'is-leader' : ''}`;
+      card.removeAttribute("style"); // Убираем анимацию
+      
+      // Обновляем текст без перерисовки
+      card.querySelector(".scoreboard-rank").textContent = rankEmoji;
+      card.querySelector(".scoreboard-score").textContent = `${p.score || 0}🏆`;
+      
+      // Двигаем карточку в правильную позицию
+      if (card.parentNode.children[i] !== card) {
+        // Если позиция изменилась, перемещаем элемент
+        board.insertBefore(card, board.children[i]);
+      }
+      
+      // Обновляем коронку для лидера
+      const crown = card.querySelector(".scoreboard-crown");
+      if (isLeader && !crown) {
+        const newCrown = document.createElement("div");
+        newCrown.className = "scoreboard-crown";
+        newCrown.textContent = "⭐";
+        card.appendChild(newCrown);
+      } else if (!isLeader && crown) {
+        crown.remove();
+      }
+    }
+  });
 }
 
 /**
